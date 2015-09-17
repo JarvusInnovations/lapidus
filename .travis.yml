@@ -4,6 +4,7 @@ os:
 env:
   global:
   - PGVERSION=9.5
+  - PG_PRELOAD=decoding_json
 
 language: node_js
 node_js:
@@ -35,12 +36,12 @@ before_script:
   - make
   - sudo make install
   - sudo service postgresql start
-  - sudo service postgresql status
+  - sudo pg_createcluster $PGVERSION test -p 55435 -u `whoami`
+  - sudo pg_ctlcluster $PGVERSION test start
   - sudo service mysql start
   - sudo service mysql status
-  - psql -c 'CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;' -U postgres
-  - psql -c 'CREATE DATABASE lapidus OWNER lapidus;' -U postgres
-  - mysql -e "CREATE DATABASE lapidus;" -uroot
+  - sudo su postgres -c "psql -h 127.0.0.1 -p 55435 -c \"CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;\""
+  - sudo su postgres -c "psql -h 127.0.0.1 -p 55435 -c 'CREATE DATABASE lapidus OWNER lapidus;'"
   - mysql -e "CREATE USER 'lapidus'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
   - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'lapidus'@'localhost'" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
