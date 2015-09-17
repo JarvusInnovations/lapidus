@@ -25,7 +25,7 @@ install:
   - tools/install_pg.sh
 
 before_script:
-  - sudo cat test/config/my.cnf >> /etc/my.cnf
+  - sudo cat test/config/my.cnf >> /etc/mysql/my.cnf
   - sudo service mysql restart
   - mysql -e "CREATE DATABASE lapidus;" -uroot
   - mysql -e "CREATE USER 'lapidus'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
