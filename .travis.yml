@@ -5,6 +5,10 @@ env:
   global:
   - PGVERSION=9.5
 
+addons:
+  apt:
+    packages: postgresql-server-dev-9.5
+
 language: node_js
 node_js:
   - "4.0"
@@ -30,8 +34,15 @@ before_script:
   - sudo bash -c "cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo service mysql stop
   - sudo service postgresql stop
+  - git clone https://github.com/leptonix/decoding-json.git
+  - cd decoding-json/
+  - make
+  - sudo make install
+  - sudo echo "shared_preload_libraries = 'decoding_json'" >> /etc/postgresql/$PG_VERSION/main/postgresql.conf
   - sudo service postgresql start
+  - sudo service postgresql status
   - sudo service mysql start
+  - sudo service mysql status
   - psql -c 'CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;' -U postgres
   - psql -c 'CREATE DATABASE lapidus OWNER lapidus;' -U postgres
   - mysql -e "CREATE DATABASE lapidus;" -uroot
