@@ -36,6 +36,7 @@ before_script:
   - cd decoding-json/
   - make
   - sudo make install
+  - cd ..
   - sudo service postgresql start
   - sudo service mysql start
   - sudo service mysql status
@@ -44,6 +45,7 @@ before_script:
   - mysql -e "CREATE USER 'lapidus'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
   - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'lapidus'@'localhost'" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
+  - npm install
 
 script: "npm run-script test-travis"
 
