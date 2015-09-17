@@ -34,7 +34,7 @@ before_script:
   - cd decoding-json/
   - make
   - sudo make install
-  - sudo echo "shared_preload_libraries = 'decoding_json'" >> /etc/postgresql/$PG_VERSION/main/postgresql.conf
+  - sudo echo "shared_preload_libraries = 'decoding_json'" >> /etc/postgresql/$PGVERSION/main/postgresql.conf
   - sudo service postgresql start
   - sudo service postgresql status
   - sudo service mysql start
