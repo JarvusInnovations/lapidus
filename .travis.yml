@@ -26,16 +26,18 @@ install:
 
 before_script:
   - sudo bash -c "cat test/config/my.cnf >> /etc/mysql/my.cnf"
-  - sudo service mysql restart
+  - sudo bash -c "cat test/config/pg-hba.conf >> /etc/postgresql/$PGVERSION/main/pg-hba.conf"
+  - sudo bash -c "cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
+  - sudo service mysql stop
+  - sudo service postgresql stop
+  - sudo service postgresql start
+  - sudo service mysql start
+  - psql -c 'CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;' -U postgres
+  - psql -c 'CREATE DATABASE lapidus OWNER lapidus;' -U postgres
   - mysql -e "CREATE DATABASE lapidus;" -uroot
   - mysql -e "CREATE USER 'lapidus'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
   - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'lapidus'@'localhost'" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
-  - sudo bash -c "cat test/config/pg-hba.conf >> /etc/postgresql/$PGVERSION/main/pg-hba.conf"
-  - sudo bash -c "cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
-  - sudo service postgresql restart
-  - psql -c 'CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;' -U postgres
-  - psql -c 'CREATE DATABASE lapidus OWNER lapidus;' -U postgres
 
 script: "npm run-script test-travis"
 
