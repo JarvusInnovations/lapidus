@@ -1,0 +1,37 @@
+{
+  "name": "lapidus",
+  "description": "Stream database changes fast, in order, with little to no performance penalty.",
+  "version": "0.0.1",
+  "keywords": [
+    "postgresql",
+    "postgres",
+    "mysql",
+    "live",
+    "streaming",
+    "logical",
+    "decoding",
+    "binlog",
+    "listener"
+  ],
+  "maintainers": [
+    {
+      "name": "Jeffrey Mealo",
+      "email": "jeffreymealo@gmail.com",
+      "web": "http://jeffreymealo.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JarvusInnovations/lapidus.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha ./test/*",
+    "test-travis": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -R spec ./test/*"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.2",
+    "istanbul": "^0.3.20",
+    "coveralls": "^2.11.4"
+  }
+}

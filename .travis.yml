@@ -1,0 +1,38 @@
+os:
+  - linux
+
+language: node_js
+node_js:
+  - "4.0"
+
+notifications:
+  email:
+    - jeffreymealo@gmail.com
+
+before_install:
+  - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+  - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main 9.5" >> /etc/apt/sources.list.d/postgresql.list'
+  - sudo apt-get update -qq
+  - sudo update-alternatives --remove-all postmaster.1.gz
+  - git clone --depth 1 https://gist.github.com/9963879.git tools
+  - tools/nuke_pg.sh
+
+install:
+  - tools/install_pg.sh
+
+before_script:
+  - sudo cat test/config/my.cnf >> /etc/my.cnf
+  - sudo service mysql restart
+  - mysql -e "CREATE DATABASE lapidus;" -uroot
+  - mysql -e "CREATE USER 'lapidus'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
+  - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'lapidus'@'localhost'" -uroot
+  - mysql -e "FLUSH PRIVILEGES;" -uroot
+  - sudo cat test/config/pg-hba.conf >> /etc/postgresql/9.5/main/pg-hba.conf
+  - sudo cat test/config/postgresql.conf >> /etc/postgresql/9.5/main/postgresql.conf
+  - sudo service postgresql restart
+  - psql -c 'CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;' -U postgres
+  - psql -c 'CREATE DATABASE lapidus OWNER lapidus;' -U postgres
+
+script: "npm run-script test-travis"
+
+after_script: "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
