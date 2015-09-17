@@ -33,5 +33,9 @@
     "mocha": "^2.3.2",
     "istanbul": "^0.3.20",
     "coveralls": "^2.11.4"
+  },
+  "dependencies": {
+    "pg-config": "0.0.1",
+    "zongji": "^0.3.2"
   }
 }
