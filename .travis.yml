@@ -25,15 +25,14 @@ install:
   - tools/install_pg.sh
 
 before_script:
-  - echo -e "[server]server-id = 1\nlog_bin = /var/log/mysql/mysql-bin.log\nbinlog_format = row\n" | sudo tee -a /etc/mysql/conf.d/bin-log.cnf
+  - sudo bash -c "cat test/config/my.cnf >> /etc/mysql/my.cnf"
   - sudo service mysql restart
   - mysql -e "CREATE DATABASE lapidus;" -uroot
   - mysql -e "CREATE USER 'lapidus'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
   - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'lapidus'@'localhost'" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
-  - sudo chmod 777 /etc/postgresql/$PGVERSION/main/pg_hba.conf
-  - sudo cat test/config/pg-hba.conf >> /etc/postgresql/$PGVERSION/main/pg-hba.conf
-  - sudo cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf
+  - sudo bash -c "cat test/config/pg-hba.conf >> /etc/postgresql/$PGVERSION/main/pg-hba.conf"
+  - sudo bash -c "cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo service postgresql restart
   - psql -c 'CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;' -U postgres
   - psql -c 'CREATE DATABASE lapidus OWNER lapidus;' -U postgres
