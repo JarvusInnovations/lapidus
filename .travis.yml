@@ -1,6 +1,10 @@
 os:
   - linux
 
+env:
+  global:
+  - PGVERSION=9.5
+
 language: node_js
 node_js:
   - "4.0"
