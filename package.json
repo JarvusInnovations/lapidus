@@ -35,7 +35,14 @@
     "coveralls": "^2.11.4"
   },
   "dependencies": {
+    "errno": "^0.1.4",
+    "jsonlint": "^1.6.2",
     "pg-config": "0.0.1",
+    "yargs": "^3.25.0",
     "zongji": "^0.3.2"
+  },
+  "preferGlobal": true,
+  "bin": {
+    "lapidus": "./index.js"
   }
 }
