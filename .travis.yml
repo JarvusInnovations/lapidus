@@ -25,7 +25,7 @@ install:
   - tools/install_pg.sh
 
 before_script:
-  - sudo cat test/config/my.cnf >> /etc/mysql/my.cnf
+  - echo -e "[server]server-id = 1\nlog_bin = /var/log/mysql/mysql-bin.log\nbinlog_format = row\n" | sudo tee -a /etc/mysql/conf.d/bin-log.cnf
   - sudo service mysql restart
   - mysql -e "CREATE DATABASE lapidus;" -uroot
   - mysql -e "CREATE USER 'lapidus'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
