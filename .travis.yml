@@ -24,7 +24,7 @@ before_install:
   - sudo service postgresql stop
 
 install:
-  - sudo apt-get install -y postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PG_VERSION
+  - sudo apt-get install -y postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PGVERSION
 
 before_script:
   - sudo bash -c "cat test/config/my.cnf >> /etc/mysql/my.cnf"
