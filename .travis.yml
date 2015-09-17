@@ -1,10 +1,12 @@
 os:
   - linux
 
+addons:
+  postgresql: "9.4"
+
 env:
   global:
   - PGVERSION=9.5
-  - PG_PRELOAD=decoding_json
 
 language: node_js
 node_js:
@@ -19,11 +21,10 @@ before_install:
   - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main 9.5" >> /etc/apt/sources.list.d/postgresql.list'
   - sudo apt-get update -qq
   - sudo update-alternatives --remove-all postmaster.1.gz
-  - git clone --depth 1 https://gist.github.com/9963879.git tools
-  - tools/nuke_pg.sh
+  - sudo service postgresql stop
 
 install:
-  - tools/install_pg.sh
+  - sudo apt-get install -y postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PG_VERSION
 
 before_script:
   - sudo bash -c "cat test/config/my.cnf >> /etc/mysql/my.cnf"
@@ -36,12 +37,10 @@ before_script:
   - make
   - sudo make install
   - sudo service postgresql start
-  - sudo pg_createcluster $PGVERSION test -p 55435 -u `whoami`
-  - sudo pg_ctlcluster $PGVERSION test start
   - sudo service mysql start
   - sudo service mysql status
-  - sudo su postgres -c "psql -h 127.0.0.1 -p 55435 -c \"CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;\""
-  - sudo su postgres -c "psql -h 127.0.0.1 -p 55435 -c 'CREATE DATABASE lapidus OWNER lapidus;'"
+  - sudo su postgres -c "psql -c \"CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;\""
+  - sudo su postgres -c "psql -c 'CREATE DATABASE lapidus OWNER lapidus;'"
   - mysql -e "CREATE USER 'lapidus'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
   - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'lapidus'@'localhost'" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
