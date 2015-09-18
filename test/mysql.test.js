@@ -7,7 +7,7 @@ describe('MySQL', function () {
     var output;
 
     before(function(done) {
-        output = spawnSync('node', ['index.js', '-c', './test/config/lapidus.json'], {timeout: 1000 });
+        output = spawnSync('node', ['index.js', '-c', './test/config/lapidus.json'], { timeout: 1500 });
         done();
     });
 
