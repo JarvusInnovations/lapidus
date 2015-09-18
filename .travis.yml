@@ -51,10 +51,12 @@ before_script:
   - sudo su postgres -c "psql -c 'CREATE DATABASE hurley OWNER hurley;'"
   - mysql -e "CREATE DATABASE jacob;" -uroot
   - mysql -e "CREATE DATABASE sawyer;" -uroot
+  - mysql -u root jacob < test/sql/test_table.sql
+  - mysql -u root sawyer < test/sql/test_table.sql
   - mysql -e "CREATE USER 'jacob'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
   - mysql -e "CREATE USER 'sawyer'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
-  - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'jacob'@'localhost'" -uroot
-  - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'sawyer'@'localhost'" -uroot
+  - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'jacob'@'localhost';" -uroot
+  - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'sawyer'@'localhost';" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
   - npm install
 
