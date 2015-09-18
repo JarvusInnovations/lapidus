@@ -24,8 +24,8 @@ before_install:
   - sudo service postgresql stop
   - sudo apt-get remove -y postgresql-9.1 postgresql-9.2 postgresql-9.3 postgresql-9.4
   - sudo apt-get purge -y postgresql-9.1 postgresql-9.2 postgresql-9.3 postgresql-9.4
-  - sudo -rm /etc/postgresql
-  - sudo -rm /var/lib/postgresql
+  - sudo rm -rf /etc/postgresql
+  - sudo rm -rf /var/lib/postgresql
 
 install:
   - sudo apt-get install -y postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PGVERSION
