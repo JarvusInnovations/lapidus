@@ -1,0 +1,39 @@
+{
+  "backends": [
+    {
+      "type": "mysql",
+      "hostname": "127.0.0.1",
+      "username": "jacob",
+      "database": "jacob",
+      "password": "2PQM9aiKMJX5chv76gYdFJNi",
+      "serverId": 1
+    },
+
+    {
+      "type": "mysql",
+      "hostname": "127.0.0.1",
+      "username": "sawyer",
+      "database": "sawyer",
+      "password": "2PQM9aiKMJX5chv76gYdFJNi",
+      "serverId": 2
+    },
+
+    {
+      "type": "postgresql",
+      "hostname": "127.0.0.1",
+      "username": "lapidus",
+      "database": "lapidus",
+      "password": "2PQM9aiKMJX5chv76gYdFJNi",
+      "slot": "lapidus_slot"
+    },
+
+    {
+      "type": "postgresql",
+      "hostname": "127.0.0.1",
+      "username": "hurley",
+      "database": "hurley",
+      "password": "2PQM9aiKMJX5chv76gYdFJNi",
+      "slot": "hurley_slot"
+    }
+  ]
+}
