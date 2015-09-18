@@ -4,14 +4,19 @@ var assert = require('assert'),
     fs = require('fs');
 
 describe('MySQL', function () {
+    var output;
 
-    it('connects to MySQL valid backends', function (done) {
-        var output = spawnSync('node', ['index.js', '-c', './test/config/lapidus.json'], {timeout: 10000});
-
-        console.log(output.stdout.toString());
-        console.error(output.stderr.toString());
-        assert.equal(output.status, 0);
-
+    before(function(done) {
+        output = spawnSync('node', ['index.js', '-c', './test/config/lapidus.json'], {timeout: 1000 });
         done();
+    });
+
+    it('connects to MySQL valid backends', function () {
+        assert.equal(output.status, 0);
+        assert.equal(output.stderr.toString(), '');
+    });
+
+    it('creates a lookup table of primary keys', function() {
+        assert.notEqual(output.stdout.toString().indexOf('caching for fast lookups'), -1);
     });
 });
