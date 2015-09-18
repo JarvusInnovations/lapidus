@@ -22,8 +22,8 @@ before_install:
   - sudo apt-get update -qq
   - sudo update-alternatives --remove-all postmaster.1.gz
   - sudo service postgresql stop
-  - sudo apt-get remove -y postgresql-9.1 postgresql-9.2 postgresql-9.3 postgresql-9.4
-  - sudo apt-get purge -y postgresql-9.1 postgresql-9.2 postgresql-9.3 postgresql-9.4
+  - sudo apt-get remove -y postgresql-9.1 postgresql-9.2 postgresql-9.3 postgresql-9.4 postgresql-common postgresql-contrib
+  - sudo apt-get purge -y postgresql-9.1 postgresql-9.2 postgresql-9.3 postgresql-9.4 postgresql-common postgresql-contrib
   - sudo rm -rf /etc/postgresql
   - sudo rm -rf /var/lib/postgresql
   - sudo rm /etc/init.d/postgresql
