@@ -57,9 +57,6 @@ before_script:
   - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'sawyer'@'localhost'" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
   - npm install
-  - cat /etc/mysql/my.cnf
-  - cat /etc/postgresql/$PGVERSION/main/pg-hba.conf
-  - cat /etc/postgresql/$PGVERSION/main/postgresql.conf
 
 script: "npm run-script test-travis"
 
