@@ -36,9 +36,9 @@ before_script:
   - mkdir the_hatch
   - mongod --port 27017 --dbpath the_hatch --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
   - sleep 5
-  - mongo lapidus --eval 'db.getMongo().setSlaveOk(); db.addUser("lapidus", "2PQM9aiKMJX5chv76gYdFJNi");'
-  - mongo admin --eval 'printjson(rs.initiate());'
+  - mongo lapidus --eval 'printjson(rs.initiate());'
   - sleep 20
+  - mongo lapidus --eval 'db.getMongo().setSlaveOk(); db.addUser("lapidus", "2PQM9aiKMJX5chv76gYdFJNi");'
   - sudo service mysql stop
   - sudo service postgresql stop
   - git clone https://github.com/leptonix/decoding-json.git
