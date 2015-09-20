@@ -61,6 +61,11 @@ before_script:
   - mysql -e "FLUSH PRIVILEGES;" -uroot
   - npm install
   - mongo lapidus --eval 'db.addUser("lapidus", "2PQM9aiKMJX5chv76gYdFJNi");'
+  - echo "replSet = lapidus" | sudo tee -a /etc/mongodb.conf
+  - sudo service mongodb restart
+  - sleep 20
+  - mongo --eval 'rs.initiate()'
+  - sleep 15
 
 script: "npm run-script test-travis"
 
