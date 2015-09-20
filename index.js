@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --allow-natives-syntax
 
 var argv = require('yargs')
         .usage('Usage: $0 <command> [options]')
