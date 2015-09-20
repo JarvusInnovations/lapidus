@@ -1,8 +1,9 @@
 os:
   - linux
 
-addons:
-  postgresql: "9.4"
+services:
+  - mongodb
+  - redis-server
 
 env:
   global:
@@ -59,6 +60,7 @@ before_script:
   - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'sawyer'@'localhost';" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
   - npm install
+  - mongo lapidus --eval 'db.addUser("lapidus", "2PQM9aiKMJX5chv76gYdFJNi");'
 
 script: "npm run-script test-travis"
 
