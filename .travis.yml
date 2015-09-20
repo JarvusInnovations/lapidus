@@ -1,10 +1,6 @@
 os:
   - linux
 
-services:
-  - mongodb
-  - redis-server
-
 env:
   global:
   - PGVERSION=9.5
@@ -35,6 +31,14 @@ before_script:
   - sudo bash -c "cat test/config/bin-log.cnf >> /etc/mysql/conf.d/bin-log.cnf"
   - sudo bash -c "cat test/config/pg-hba.conf >> /etc/postgresql/$PGVERSION/main/pg-hba.conf"
   - sudo bash -c "cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
+  - sudo bash -c "cat test/config/redis.conf >> /etc/redis/redis.conf"
+  - sudo service redis-server start
+  - mkdir the_hatch
+  - mongod --port 27017 --dbpath the_hatch --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
+  - mongo lapidus --eval 'db.addUser("lapidus", "2PQM9aiKMJX5chv76gYdFJNi");'
+  - sleep 3
+  - mongo admin --eval 'printjson(rs.initiate());'
+  - sleep 20
   - sudo service mysql stop
   - sudo service postgresql stop
   - git clone https://github.com/leptonix/decoding-json.git
@@ -60,12 +64,6 @@ before_script:
   - mysql -e "GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'sawyer'@'localhost';" -uroot
   - mysql -e "FLUSH PRIVILEGES;" -uroot
   - npm install
-  - mongo lapidus --eval 'db.addUser("lapidus", "2PQM9aiKMJX5chv76gYdFJNi");'
-  - echo "replSet = lapidus" | sudo tee -a /etc/mongodb.conf
-  - sudo service mongodb restart
-  - sleep 20
-  - mongo --eval 'rs.initiate()'
-  - sleep 15
 
 script: "npm run-script test-travis"
 
