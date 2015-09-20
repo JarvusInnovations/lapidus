@@ -35,8 +35,8 @@ before_script:
   - sudo service redis-server start
   - mkdir the_hatch
   - mongod --port 27017 --dbpath the_hatch --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
-  - mongo lapidus --eval 'db.addUser("lapidus", "2PQM9aiKMJX5chv76gYdFJNi");'
-  - sleep 3
+  - sleep 5
+  - mongo lapidus --eval 'db.getMongo().setSlaveOk(); db.addUser("lapidus", "2PQM9aiKMJX5chv76gYdFJNi");'
   - mongo admin --eval 'printjson(rs.initiate());'
   - sleep 20
   - sudo service mysql stop
