@@ -12,7 +12,7 @@ as a Node.js module or directly from the terminal.
 You'll need PostgreSQL 9.4 or higher with logical replication configured and the decoding_json plugin installed and
 loaded. Forks of PostgreSQL should be compatible provided they ship with pg_recvlogical.
 
-** To install the decoding_json logical decoding plugin on Ubuntu: **
+**To install the decoding_json logical decoding plugin on Ubuntu:**
 ```shell
 # Ubuntu / Debian
 git clone https://github.com/leptonix/decoding-json.git
@@ -22,7 +22,7 @@ make
 sudo cp decoding_json.so /usr/lib/postgresql/9.5/lib/
 ```
 
-** To enable logical decoding and the decoding_json plugin add the following lines to your postgresql.conf: **
+**To enable logical decoding and the decoding_json plugin add the following lines to your postgresql.conf:**
 ```
 wal_level = logical
 max_wal_senders = 10
@@ -30,9 +30,9 @@ max_replication_slots = 10
 shared_preload_libraries = 'decoding_json'
 ```
 
-** Create a user with replication privileges and add them to your pg_hba.conf file. **
+**Create a user with replication privileges and add them to your pg_hba.conf file. **
 
-** Afterwards, restart PostgreSQL and verify that it starts correctly: **
+**Afterwards, restart PostgreSQL and verify that it starts correctly:**
 ```
 service postgresql restart
 service postgresql status
@@ -48,7 +48,7 @@ For information on managing replication slots:
 You'll need MySQL 5.1.15 or higher with binary logging configured. Forks of MySQL should be compatible but have not been
 tested.
 
-** Add the following lines to your my.cnf: **
+**Add the following lines to your my.cnf:**
 ```shell
 server-id        = 1
 log_bin          = /var/log/mysql/mysql-bin.log
@@ -57,12 +57,12 @@ expire_logs_days = 10    # Optional
 binlog_format    = row
 ```
 
-** Create a user with replication permissions: **
+**Create a user with replication permissions:**
 ```
 GRANT REPLICATION SLAVE, REPLICATION CLIENT, SELECT ON *.* TO 'lapidus'@'localhost' IDENTIFIED BY 'secure-password';
 ```
 
-** Restart MySQL and verify that it starts correctly: **
+**Restart MySQL and verify that it starts correctly:**
 ```
 service mysql restart
 service mysql status
@@ -117,7 +117,7 @@ events to NATS using the NATS plugin:
   ],
   "plugins": {
     "nats": {
-      "server": "nats://10.240.103.217:4222"
+      "server": "nats://localhost:4222"
     }
   }
 }
@@ -163,6 +163,7 @@ messaging system.
     }
   ]
 }
+```
 
 ### Events
 Insert, Update and Delete events will be published using the subject ``schema.table.pk``. Here are examples events:
@@ -211,4 +212,5 @@ if you notice any issues please report them.
 Lapidus is MIT licensed. The artwork in the header is Copyright [Matt Greenholt](http://mattgreenholt.blogspot.com/).
 
 # Contributors
-Matt Greenholt has kindly allowed the use of his artwork. Check out his [blog](http://mattgreenholt.blogspot.com/) and [flickr](https://www.flickr.com/photos/38457242@N00/).
+Matt Greenholt has kindly allowed the use of his artwork. Check out his [blog](http://mattgreenholt.blogspot.com/) and
+[flickr](https://www.flickr.com/photos/38457242@N00/).
