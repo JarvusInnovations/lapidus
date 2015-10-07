@@ -30,7 +30,7 @@ max_replication_slots = 10
 shared_preload_libraries = 'decoding_json'
 ```
 
-**Create a user with replication privileges and add them to your pg_hba.conf file. **
+**Create a user with replication privileges and add them to your pg_hba.conf file.**
 
 **Afterwards, restart PostgreSQL and verify that it starts correctly:**
 ```
