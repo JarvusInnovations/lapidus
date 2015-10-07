@@ -20,8 +20,8 @@
 
     {
       "type": "postgresql",
-      "hostname": "127.0.0.1",
-      "username": "lapidus",
+      "host": "127.0.0.1",
+      "user": "lapidus",
       "database": "lapidus",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
       "slot": "lapidus_slot"
@@ -29,8 +29,8 @@
 
     {
       "type": "postgresql",
-      "hostname": "127.0.0.1",
-      "username": "hurley",
+      "host": "127.0.0.1",
+      "user": "hurley",
       "database": "hurley",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
       "slot": "hurley_slot"
