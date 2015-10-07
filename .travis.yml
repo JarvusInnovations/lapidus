@@ -29,7 +29,7 @@ install:
 
 before_script:
   - sudo bash -c "cat test/config/bin-log.cnf >> /etc/mysql/conf.d/bin-log.cnf"
-  - sudo bash -c "cat test/config/pg-hba.conf >> /etc/postgresql/$PGVERSION/main/pg-hba.conf"
+  - sudo bash -c "cat test/config/pg-hba.conf > /etc/postgresql/$PGVERSION/main/pg-hba.conf"
   - sudo bash -c "cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo bash -c "cat test/config/redis.conf >> /etc/redis/redis.conf"
   - sudo service redis-server start
