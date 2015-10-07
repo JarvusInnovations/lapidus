@@ -6,7 +6,7 @@
 
 # Getting Started
 Currently MySQL and PostgreSQL databases are supported with MongoDB and Redis support on the way. Lapidus can be used
-
+as a Node.js module or directly from the terminal.
 
 ## PostgreSQL
 You'll need PostgreSQL 9.4 or higher with logical replication configured and the decoding_json plugin installed and
@@ -181,12 +181,31 @@ Insert, Update and Delete events will be published using the subject ``schema.ta
 ```javascript
 // TODO: sample delete
 ```
-
 ### Caveats
 
 * At this time, transactions and other event types are not published to NATS.
 * Each worker uses its own connection to NATS using non-blocking event emitters; out of order delivery is likely.
 * NATS does not guarantee in order delivery so a blocking variant is not likely (it's 10-20 LoC if you're interested).
+
+# Production status
+Lapidus is currently under heavy development. It is not recommended for use in production yet. It will be deployed
+with 5k simultaneous users by the end of 2015. Please share your results. Benchmark and load testing script will be
+made available.
+
+# Resource requirements
+
+## CPU
+CPU usage is light, as a rule of thumb, measure your peak MySQL CPU usage (after enabling binary logging) and multiply
+that by 0.075. That's how much CPU Lapidus is likely to use at peak.
+
+## Memory
+Generally speaking, each worker requires 10-15 MB of ram.
+
+Your peak memory usage is dictated by V8's garbage collection. When running the TPC-C benchmark against the MySQL worker
+using 8 cores memory sat around 70MB and peaked at 120MB before garbage collection knocked it back down to 70MB.
+
+I tested for memory leaks by running 5 million transactions using the TPC-C benchmark and things look pretty solid,
+if you notice any issues please report them.
 
 # License
 Lapidus is MIT licensed. The artwork in the header is Copyright [Matt Greenholt](http://mattgreenholt.blogspot.com/).
