@@ -1,4 +1,6 @@
-#!/usr/bin/env node --allow-natives-syntax
+#!/usr/bin/env node
+
+'use strict';
 
 var argv = require('yargs')
         .usage('Usage: $0 <command> [options]')
@@ -12,6 +14,7 @@ var argv = require('yargs')
         .describe('t', 'Test the configuration file and then exit')
         .argv,
 
+    path = require('path'),
     fs = require('fs'),
     cluster = require('cluster'),
     jsonlint = require('jsonlint'),
@@ -39,7 +42,7 @@ function loadConfig(path, cb) {
 }
 
 function validatePluginConfig (plugin, pluginConfig, scopeConfig, globalConfig) {
-    var pluginFilename = `./lib/plugins/${plugin}.js`,
+    var pluginFilename = path.join(__dirname, `./lib/plugins/${plugin}.js`),
         plugin,
         errors = [];
 
@@ -69,7 +72,7 @@ function validateConfig(config) {
         errors.push('Lapidus requires one or more backends to start.');
     } else {
         config.backends.forEach(function (backend) {
-            var workerFilename = `./lib/${backend.type}-worker.js`;
+            var workerFilename = path.join(__dirname, `./lib/${backend.type}-worker.js`);
 
             if (!fs.existsSync(workerFilename)) {
                 errors.push('Invalid backend type specified: ' + backend.type);
@@ -115,7 +118,7 @@ if (!module.parent) {
 
         if (cluster.isMaster) {
             config.backends.forEach(function (backend, i) {
-                var workerFilename = `./lib/${backend.type}-worker.js`,
+                var workerFilename = path.join(__dirname, `./lib/${backend.type}-worker.js`),
                     worker;
 
                 backend.plugins = backend.plugins || config.plugins || {};
