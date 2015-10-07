@@ -41,7 +41,6 @@
     "mongo-oplog": "^1.0.1",
     "nats": "^0.4.4",
     "pg-config": "0.0.1",
-    "redis-sync": "jmealo/redis-sync#master",
     "socket.io": "^1.3.7",
     "yargs": "^3.25.0",
     "zongji": "jmealo/zongji#master"
