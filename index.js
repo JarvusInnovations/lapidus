@@ -16,6 +16,8 @@ var argv = require('yargs')
     cluster = require('cluster'),
     jsonlint = require('jsonlint'),
 
+    ReplPlugin = require('./lib/plugins/repl'),
+    replPlugin = new ReplPlugin(),
     config;
 
 function loadConfig(path, cb) {
@@ -36,6 +38,29 @@ function loadConfig(path, cb) {
     });
 }
 
+function validatePluginConfig (plugin, pluginConfig, scopeConfig, globalConfig) {
+    var pluginFilename = `./lib/plugins/${plugin}.js`,
+        plugin,
+        errors = [];
+
+    if (typeof plugin !== 'string') {
+        errors.push(`Invalid plugin name: "${plugin}" is not a string`);
+        return errors;
+    }
+
+    if (!fs.existsSync(pluginFilename)) {
+        errors.push(`Unable to load ${plugin} plugin: ${pluginFilename} does not exist.`);
+    } else {
+        plugin = require(pluginFilename);
+
+        if (typeof plugin.validateConfig === 'function') {
+            errors = errors.concat(plugin.validateConfig(pluginConfig, scopeConfig, globalConfig));
+        }
+    }
+
+    return errors;
+}
+
 function validateConfig(config) {
     var errors = [],
         error;
@@ -43,13 +68,27 @@ function validateConfig(config) {
     if (!Array.isArray(config.backends) || config.backends.length === 0) {
         errors.push('Lapidus requires one or more backends to start.');
     } else {
-        config.backends.forEach(function (backend, i) {
+        config.backends.forEach(function (backend) {
             var workerFilename = `./lib/${backend.type}-worker.js`;
 
             if (!fs.existsSync(workerFilename)) {
                 errors.push('Invalid backend type specified: ' + backend.type);
             }
+
+            // worker-scoped plugins
+            if (typeof backend.plugins === 'object') {
+                for (var plugin in backend.plugins) {
+                    errors = errors.concat(validatePluginConfig(backend.plugins[plugin], backend, config));
+                }
+            }
         });
+    }
+
+    if (typeof config.plugins === 'object') {
+        for (var plugin in config.plugins) {
+            // global plugins
+            errors = errors.concat(validatePluginConfig(plugin, config.plugins[plugin], config, config));
+        }
     }
 
     if (errors.length > 0) {
@@ -78,6 +117,8 @@ if (!module.parent) {
             config.backends.forEach(function (backend, i) {
                 var workerFilename = `./lib/${backend.type}-worker.js`,
                     worker;
+
+                backend.plugins = backend.plugins || config.plugins || {};
 
                 cluster.setupMaster({
                     exec: workerFilename
