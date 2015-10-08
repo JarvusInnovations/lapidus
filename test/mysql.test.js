@@ -87,6 +87,20 @@ describe('MySQL', function () {
             assert.equal(mysql.onDeleteWrapper, false);
         });
 
+        it('setting emitEvents cascades', function () {
+            mysql.emitEvents = true;
+            assert.equal(mysql.emitEvent, true);
+            assert.equal(mysql.emitUpdate, true);
+            assert.equal(mysql.emitInsert, true);
+            assert.equal(mysql.emitDelete, true);
+
+            mysql.emitEvents = false;
+            assert.equal(mysql.emitEvent, false);
+            assert.equal(mysql.emitUpdate, false);
+            assert.equal(mysql.emitInsert, false);
+            assert.equal(mysql.emitDelete, false);
+        });
+
         it('with meta properties that will not overwrite custom values with meta values', function () {
             function otherFunc() {
                 return 1 + 1;

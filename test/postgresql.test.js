@@ -108,5 +108,19 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.onUpdateWrapper, emptyFunc);
             assert.equal(postgresql.onDeleteWrapper, emptyFunc);
         });
+
+        it('setting emitEvents cascades', function () {
+            postgresql.emitEvents = true;
+            assert.equal(postgresql.emitEvent, true);
+            assert.equal(postgresql.emitUpdate, true);
+            assert.equal(postgresql.emitInsert, true);
+            assert.equal(postgresql.emitDelete, true);
+
+            postgresql.emitEvents = false;
+            assert.equal(postgresql.emitEvent, false);
+            assert.equal(postgresql.emitUpdate, false);
+            assert.equal(postgresql.emitInsert, false);
+            assert.equal(postgresql.emitDelete, false);
+        });
     });
 });
