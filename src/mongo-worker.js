@@ -6,7 +6,7 @@ var MongoDb = require('./mongo.js'),
 function init(config) {
     'use strict';
 
-    console.log(`MongoDB: Connecting to ${config.database} on ${config.host} as ${config.user}`);
+    console.log(`MongoDB: Connecting to ${config.database} on ${config.hostname} as ${config.username}`);
 }
 
 process.on('message', function (msg) {
@@ -24,9 +24,8 @@ process.on('message', function (msg) {
             var config = config.plugins[plugin];
             plugin = require('./plugins/' + plugin);
             plugins.push(plugin);
-            plugin.init(config, pg);
+            plugin.init(config, mongo);
         }
-
 
         mongo.on('error', function(err) {
             console.error(err);
@@ -41,6 +40,7 @@ process.on('message', function (msg) {
                 if (err) {
                     throw err;
                 }
+                console.log(`MongoDB: Connected`);
             });
         });
     }

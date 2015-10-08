@@ -5,22 +5,23 @@ var assert = require('assert'),
     path = require('path');
 
 describe('MongoDB', function () {
+
+    before(function (done) {
+        output = spawnSync('node', ['index.js', '-c', './test/config/mongo-only.json'], {timeout: 1500});
+        done();
+    });
+
+    it('connects to valid MongoDB backend(s)', function () {
+        assert.equal(output.status, 0);
+        assert.equal(output.stderr.toString(), '');
+    });
+
     describe('Can be used as a module', function () {
         var mongo,
             eventsWrapper;
 
         before(function (done) {
             var config = require(path.join(__dirname, './config/mongo-only.json')).backends[0];
-
-            // The slot will still be in use from the spawned process above
-            config.slot = config.slot + '1';
-
-            config.onEventsWrapper = setImmediate;
-
-            config.onEvent = function () {
-                console.log('onEvent');
-                console.log(arguments);
-            };
 
             mongo = new MongoDb(config);
 

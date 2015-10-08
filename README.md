@@ -5,8 +5,11 @@
 [![Coverage Status](https://coveralls.io/repos/JarvusInnovations/lapidus/badge.svg?branch=master&service=github)](https://coveralls.io/github/JarvusInnovations/lapidus?branch=master)
 
 # Getting Started
-Currently MySQL and PostgreSQL databases are supported with MongoDB and Redis support on the way. Lapidus can be used
-as a Node.js module or directly from the terminal.
+Currently MySQL and PostgreSQL databases are fully supported. MongoDB supports inserts and deletes, however, updates
+return a copy of the operation (for example, a `$rename` operation will return a `$set` for the new field and an 
+`$unset` for the old field) instead of the object as it exists in the database. Redis support is on the way. Lapidus can
+currently be used as a daemon or Node.js module. Support for piping line-delimited JSON to other processes is a high
+priority.
 
 ## PostgreSQL
 You'll need PostgreSQL 9.4 or higher with logical replication configured and the decoding_json plugin installed and
@@ -67,6 +70,19 @@ GRANT REPLICATION SLAVE, REPLICATION CLIENT, SELECT ON *.* TO 'lapidus'@'localho
 service mysql restart
 service mysql status
 ```
+
+## MongoDB
+We test against MongoDB 3.x, however, older versions should work. You'll need to setup MongoDB as a replica set. If
+you're not truly using replication during development you will need to connect and run:
+
+```javascript
+// DO NOT DO THIS IN PRODUCTION
+rs.initiate()
+db.getMongo().setSlaveOk();
+```
+
+For more information on setting up replication in MongoDB
+[check out the docs](http://docs.mongodb.org/manual/tutorial/deploy-replica-set/).
 
 ## Configuration
 Lapidus will search for lapidus.json in the current working directory. You can specify a different configuration by

@@ -5,14 +5,41 @@ const EventEmitter = require('events');
 const MongoOplog = require('mongo-oplog');
 
 function Mongo(options) {
+    var connString;
+
     options = options || {};
 
-    // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
+    if (!options.connString) {
+        connString = 'mongodb://';
+        if (options.username && options.password) {
+            connString += options.username + ':' + options.password  + '@';
+        }
+
+        connString += options.hostname || options.host || '127.0.0.1';
+
+        if (options.port) {
+            connString += ':' + options.port;
+        }
+
+        connString += '/' + (options.database || 'admin');
+
+        if (options.replicaSet) {
+            connString += '?replicaSet=' + options.replicaSet;
+        }
+
+        this.connString = connString;
+    }
+
+    for (var prop in options) {
+        this[prop] = options.prop;
+    }
 
     Object.defineProperty(this, "_emitEvents", {
         enumerable: false,
         writable: true
     });
+
+    // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
 
     this._emitEvents = (typeof options.emitEvents === 'boolean') ? options.emitEvents : true;
 
@@ -76,52 +103,164 @@ Object.defineProperty(Mongo.prototype, 'emitEvents', {
     }
 });
 
-/*
-var oplog = MongoOplog('mongodb://127.0.0.1:27017/lapidus');
-
-oplog.tail(function(err, stream) {
-    console.log(oplog.db);
-});
-
-oplog.on('op', function (data) {
-    console.log(data);
-});
-
-oplog.on('insert', function (doc) {
-    console.log(doc.op);
-});
-
-oplog.on('update', function (doc) {
-    console.log(doc.op);
-});
-
-oplog.on('delete', function (doc) {
-    console.log(doc.op._id);
-});
-
-oplog.on('error', function (error) {
-    console.log(error);
-});
-
-oplog.on('end', function () {
-    console.log('Stream ended');
-});
-
-oplog.stop(function () {
-    console.log('server stopped');
-});
-*/
-
 Mongo.prototype.init = function init(cb) {
+    var oplog = MongoOplog('mongodb://127.0.0.1:27017/lapidus?replicaSet=rs0'),
+        self = this;
+
+    oplog.on('error', function (error) {
+       self.emit('error', error);
+    });
+
+    oplog.on('end', function () {
+        self.emit('end');
+    });
+
+    this.oplog = oplog;
+
     cb && cb(null, {});
 };
 
 Mongo.prototype.start = function(cb) {
-    cb && cb(null, {});
+    var oplog = this.oplog,
+        self = this;
+
+    if (!oplog) {
+        cb(new Error('You must call .init() before you call .start()'), null);
+    }
+
+    oplog.on('insert', function (doc) {
+        var o = doc.o,
+            o2 = doc.o2,
+            ns = doc.ns;
+
+        var event = {
+            pk: o._id || o2._id,
+            ns: ns,
+            item: o
+        };
+
+        if (self.onInsert) {
+            if (self.onInsertWrapper) {
+                self.onInsertWrapper(function() {
+                    self.onInsert(event, doc);
+                });
+            } else {
+                self.onInsert(event, doc);
+            }
+        }
+
+        if (self.onEvent) {
+            if (self.onEventWrapper) {
+                self.onEventWrapper(function() {
+                    self.onEvent(event, doc);
+                });
+            } else {
+                self.onEvent(event, doc);
+            }
+        }
+
+        self.emitInsert && self.emit('insert', event);
+
+        if (self.emitEvent) {
+            event.type = 'insert';
+            self.emit('event', event);
+        }
+    });
+
+    oplog.on('update', function (doc) {
+        var o = doc.o,
+            o2 = doc.o2,
+            ns = doc.ns;
+
+        var event = {
+            pk: o._id || o2._id,
+            ns: ns,
+            item: o
+        };
+
+        if (self.onUpdate) {
+            if (self.onUpdateWrapper) {
+                self.onUpdateWrapper(function() {
+                    self.onUpdate(event, doc);
+                });
+            } else {
+                self.onUpdate(event, doc);
+            }
+        }
+
+        if (self.onEvent) {
+            if (self.onEventWrapper) {
+                self.onEventWrapper(function() {
+                    self.onEvent(event, doc);
+                });
+            } else {
+                self.onEvent(event, doc);
+            }
+        }
+
+        self.emitUpdate && self.emit('update', event);
+
+        if (self.emitEvent) {
+            event.type = 'update';
+            self.emit('event', event);
+        }
+    });
+
+    oplog.on('delete', function (doc) {
+        var o = doc.o,
+            o2 = doc.o2,
+            ns = doc.ns;
+
+        var event = {
+            pk: o._id || o2._id,
+            ns: ns
+        };
+
+        if (self.onDelete) {
+            if (self.onDeleteWrapper) {
+                self.onDeleteWrapper(function() {
+                    self.onDelete(event, doc);
+                });
+            } else {
+                self.onDelete(event, doc);
+            }
+        }
+
+        if (self.onEvent) {
+            if (self.onEventWrapper) {
+                self.onEventWrapper(function() {
+                    self.onEvent(event, doc);
+                });
+            } else {
+                self.onEvent(event, doc);
+            }
+        }
+
+        self.emitDelete && self.emit('delete', event);
+
+        if (self.emitEvent) {
+            event.type = 'delete';
+            self.emit('event', event);
+        }
+    });
+
+    if (typeof cb === 'function') {
+        oplog.tail(cb);
+    } else {
+        oplog.tail();
+    }
 };
 
-Mongo.prototype.stop = function() {
+Mongo.prototype.stop = function(cb) {
+    if (!this.oplog) {
+        cb(new Error('You must call .init() before you call .stop()'), null);
+    }
 
+    if (typeof cb === 'function') {
+        this.oplog.stop(cb);
+    } else {
+        this.oplog.stop();
+    }
 };
 
 Mongo.prototype.validateConfig = function() {
