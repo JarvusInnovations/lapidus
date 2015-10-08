@@ -2,7 +2,7 @@
 
 'use strict';
 
-var argv = require('yargs')
+var yargs = require('yargs')
         .usage('Usage: $0 <command> [options]')
         .default('c', './lapidus.json')
         .alias('c', 'config')
@@ -11,131 +11,44 @@ var argv = require('yargs')
         .alias('h', 'help')
         .default('t', false)
         .alias('t', 'test')
-        .describe('t', 'Test the configuration file and then exit')
-        .argv,
-
-    path = require('path'),
+        .describe('t', 'Test the configuration file and then exit'),
+    argv = yargs.argv,
     fs = require('fs'),
-    cluster = require('cluster'),
-    jsonlint = require('jsonlint'),
+    path = require('path'),
+    Lapidus = require('./src/lapidus'),
+    lapidus;
 
-    ReplPlugin = require('./lib/plugins/repl'),
-    replPlugin = new ReplPlugin(),
-    config;
-
-function loadConfig(path, cb) {
-    'use strict';
-
-    fs.readFile(path, 'utf-8', function (err, data) {
-        if (err) {
-            return cb(err, null);
-        }
-
-        try {
-            data = jsonlint.parse(data);
-        } catch (e) {
-            return cb(e, null);
-        }
-
-        cb(validateConfig(data), data);
-    });
+function bail(reason) {
+    yargs.showHelp();
+    console.error(reason);
+    process.exit(1);
 }
 
-function validatePluginConfig (plugin, pluginConfig, scopeConfig, globalConfig) {
-    var pluginFilename = path.join(__dirname, `./lib/plugins/${plugin}.js`),
-        plugin,
-        errors = [];
+fs.readFile(argv.config, 'utf-8', function(err, config) {
+    var error;
 
-    if (typeof plugin !== 'string') {
-        errors.push(`Invalid plugin name: "${plugin}" is not a string`);
-        return errors;
+    if (err) {
+        bail('An error occurred loading the configuration file (' + path.resolve(argv.config) + '): ' + err);
     }
 
-    if (!fs.existsSync(pluginFilename)) {
-        errors.push(`Unable to load ${plugin} plugin: ${pluginFilename} does not exist.`);
-    } else {
-        plugin = require(pluginFilename);
-
-        if (typeof plugin.validateConfig === 'function') {
-            errors = errors.concat(plugin.validateConfig(pluginConfig, scopeConfig, globalConfig));
-        }
+    try {
+        config = Lapidus.prototype.parseConfig(config);
+    } catch (e) {
+        bail('An error occurred parsing the configuration file (' + path.resolve(argv.config) + '): ' + err);
     }
 
-    return errors;
-}
+    error = Lapidus.prototype.validateConfig(config);
 
-function validateConfig(config) {
-    var errors = [],
-        error;
-
-    if (!Array.isArray(config.backends) || config.backends.length === 0) {
-        errors.push('Lapidus requires one or more backends to start.');
-    } else {
-        config.backends.forEach(function (backend) {
-            var workerFilename = path.join(__dirname, `./lib/${backend.type}-worker.js`);
-
-            if (!fs.existsSync(workerFilename)) {
-                errors.push('Invalid backend type specified: ' + backend.type);
-            }
-
-            // worker-scoped plugins
-            if (typeof backend.plugins === 'object') {
-                for (var plugin in backend.plugins) {
-                    errors = errors.concat(validatePluginConfig(backend.plugins[plugin], backend, config));
-                }
-            }
-        });
+    if (error) {
+        bail(error);
     }
 
-    if (typeof config.plugins === 'object') {
-        for (var plugin in config.plugins) {
-            // global plugins
-            errors = errors.concat(validatePluginConfig(plugin, config.plugins[plugin], config, config));
-        }
+    if (argv.test) {
+        console.log('The configuration file is well-formed. Good job!');
+        process.exit(0);
     }
 
-    if (errors.length > 0) {
-        return new Error(errors.join('\n'));
-    }
+    config.autoStart = true;
 
-    return null;
-}
-
-if (!module.parent) {
-    // Lapidus was invoked from the command line
-    loadConfig(argv.config, function (err, configFile) {
-
-        if (err) {
-            console.error('Error loading configuration file: ' + err);
-            process.exit(1);
-        }
-
-        config = configFile;
-
-        if (argv.test) {
-            process.exit(0);
-        }
-
-        if (cluster.isMaster) {
-            config.backends.forEach(function (backend, i) {
-                var workerFilename = path.join(__dirname, `./lib/${backend.type}-worker.js`),
-                    worker;
-
-                backend.plugins = backend.plugins || config.plugins || {};
-
-                cluster.setupMaster({
-                    exec: workerFilename
-                });
-
-                worker = cluster.fork();
-
-                worker.on('online', function() {
-                    worker.send(JSON.stringify(backend));
-                });
-            });
-        }
-    });
-} else {
-    // Lapidus was required as a module
-    exports.loadConfig = loadConfig;
-}
+    lapidus = new Lapidus(config);
+});
