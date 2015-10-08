@@ -1,14 +1,14 @@
 var assert = require('assert'),
-    Lapidus = require('../index.js'),
-    MySql = require('../lib/mysql.js'),
+    MySql = require('../src/mysql.js'),
     spawnSync = require('child_process').spawnSync,
-    fs = require('fs');
+    fs = require('fs'),
+    path = require('path');
 
 describe('MySQL', function () {
     var output;
 
     before(function (done) {
-        output = spawnSync('node', ['index.js', '-c', './test/config/lapidus.json'], {timeout: 1500});
+        output = spawnSync('node', ['index.js', '-c', './test/config/mysql-only.json'], {timeout: 1500});
         done();
     });
 
@@ -26,7 +26,7 @@ describe('MySQL', function () {
             eventsWrapper;
 
         before(function (done) {
-            var config = require('./config/lapidus.json').backends[0];
+            var config = require(path.join(__dirname, './config/mysql-only.json')).backends[0];
 
             config.onEventsWrapper = setImmediate;
 
@@ -74,7 +74,6 @@ describe('MySQL', function () {
         it('with meta properties that cascade properly to their children', function() {
             mysql.onEventsWrapper = eventsWrapper;
             assert.equal(mysql.onEventWrapper, eventsWrapper);
-            assert.equal(mysql.onEventWrapper, eventsWrapper);
             assert.equal(mysql.onInsertWrapper, eventsWrapper);
             assert.equal(mysql.onUpdateWrapper, eventsWrapper);
             assert.equal(mysql.onDeleteWrapper, eventsWrapper);
@@ -82,7 +81,6 @@ describe('MySQL', function () {
 
         it('with meta properties that will only cascade valid values', function () {
             mysql.onEventsWrapper = 'Not a function';
-            assert.equal(mysql.onEventWrapper, false);
             assert.equal(mysql.onEventWrapper, false);
             assert.equal(mysql.onInsertWrapper, false);
             assert.equal(mysql.onUpdateWrapper, false);
@@ -101,7 +99,6 @@ describe('MySQL', function () {
             mysql.onInsertWrapper = otherFunc;
             mysql.onEventsWrapper = emptyFunc;
 
-            assert.equal(mysql.onEventWrapper,  emptyFunc);
             assert.equal(mysql.onEventWrapper,  emptyFunc);
             assert.equal(mysql.onInsertWrapper, otherFunc, 'custom value should not be overridden by meta value');
             assert.equal(mysql.onUpdateWrapper, emptyFunc);
