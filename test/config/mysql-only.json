@@ -1,0 +1,21 @@
+{
+  "backends": [
+    {
+      "type": "mysql",
+      "hostname": "127.0.0.1",
+      "username": "jacob",
+      "database": "jacob",
+      "password": "2PQM9aiKMJX5chv76gYdFJNi",
+      "serverId": 1
+    },
+
+    {
+      "type": "mysql",
+      "hostname": "127.0.0.1",
+      "username": "sawyer",
+      "database": "sawyer",
+      "password": "2PQM9aiKMJX5chv76gYdFJNi",
+      "serverId": 2
+    }
+  ]
+}
