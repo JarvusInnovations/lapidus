@@ -39,7 +39,9 @@ before_script:
   - mongo lapidus --eval 'printjson(rs.initiate());'
   - sleep 20
   - mongo lapidus --eval 'db.getMongo().setSlaveOk();'
-  - mongo lapidus --eval 'db.createUser({ user: "lapidus", pwd: "2PQM9aiKMJX5chv76gYdFJNi", roles: [ {role: "clusterAdmin", db: "admin" }, { role: "readAnyDatabase", db: "admin" }, "readWrite" ] });'
+  - mongo lapidus --eval 'db.getMongo().setSlaveOk();'
+  - mongo lapidus --eval 'db.createUser({user:"lapidus",pwd:"2PQM9aiKMJX5chv76gYdFJNi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
+  - mongo lapidus --eval 'db.createUser({user:"walt",pwd:"EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
   - sudo service mysql stop
   - sudo service postgresql stop
   - git clone https://github.com/leptonix/decoding-json.git
