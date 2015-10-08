@@ -4,8 +4,6 @@ var EventEmitter = require('events').EventEmitter,
 function MySql(cfg) {
     'use strict';
 
-    var defaultValue;
-
     this.zongji = new ZongJi({
         host: cfg.hostname,
         user: cfg.username,
@@ -45,7 +43,7 @@ function MySql(cfg) {
     this.onInsertWrapper = (typeof cfg.onInsertWrapper === 'function') ? cfg.onInsertWrapper : this._onEventsWrapper;
     this.onUpdateWrapper = (typeof cfg.onUpdateWrapper === 'function') ? cfg.onUpdateWrapper : this._onEventsWrapper;
     this.onDeleteWrapper = (typeof cfg.onDeleteWrapper === 'function') ? cfg.onDeleteWrapper : this._onEventsWrapper;
-    this.onEventWrapper  = (typeof cfg.onEventWrapper === 'function')  ? cfg.onDeleteWrapper : this._onEventsWrapper;
+    this.onEventWrapper  = (typeof cfg.onEventWrapper === 'function')  ? cfg.onEventWrapper : this._onEventsWrapper;
 
     this.schemaTablePrimaryKeys = cfg.schemaTablePrimaryKeys || {};
 }
@@ -75,6 +73,7 @@ Object.defineProperty(MySql.prototype, 'emitEvents', {
         this.emitInsert = val;
         this.emitUpdate = val;
         this.emitDelete = val;
+        this.emitEvent = val;
 
         this._emitEvents = val;
     },
