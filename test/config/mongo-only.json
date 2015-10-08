@@ -5,7 +5,6 @@
       "hostname": "127.0.0.1",
       "username": "lapidus",
       "database": "lapidus",
-      "password": "2PQM9aiKMJX5chv76gYdFJNi"
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
       "replicaSet": "rs0"
     },
@@ -15,7 +14,6 @@
       "hostname": "127.0.0.1",
       "username": "walt",
       "database": "lapidus",
-      "password": "EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi"
       "password": "EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",
       "replicaSet": "rs0"
     }
