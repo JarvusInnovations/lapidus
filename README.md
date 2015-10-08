@@ -89,8 +89,8 @@ Lapidus will search for lapidus.json in the current working directory. You can s
 passing it to the constructor or using the ``-c`` flag on the terminal. For a list of command line options run
 ``lapidus --help``.
 
-Here is a sample configuration file that will connect to two PostgreSQL backends, two MySQL backends and publish all
-events to NATS using the NATS plugin:
+Here is a sample configuration file that will connect to two PostgreSQL backends, two MySQL backends, one MongoDB
+backend and publish all events to NATS using the NATS plugin:
 
 ```javascript
 {
@@ -129,6 +129,15 @@ events to NATS using the NATS plugin:
       "database": "hurley",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
       "slot": "hurley_slot"
+    },
+    
+    {
+      "type": "mongo",
+      "hostname": "127.0.0.1",
+      "username": "lapidus",
+      "database": "lapidus",
+      "password": "2PQM9aiKMJX5chv76gYdFJNi",
+      "replicaSet": "rs0"
     }
   ],
   "plugins": {
