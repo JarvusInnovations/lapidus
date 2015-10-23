@@ -421,7 +421,6 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                                 table: tableName,
                                 pk: pk,
                                 schema: line.schema,
-                                type: action,
                                 item: (line.data || pk)
                             };
 
@@ -435,7 +434,7 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                                 }
                             }
 
-                            self.emitDelete && self.emit('delete', event);
+                            self[emitEvent] && self.emit(action, msg);
 
                             if (self.onEvent) {
                                 msg.type = action;
