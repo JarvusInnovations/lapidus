@@ -6,17 +6,21 @@ module.exports = {
         nats = nats.connect(config);
 
         eventEmitter.on('event', function(event) {
+            var subject,
+                action,
+                cachePrefix = config.cachePrefix;
 
             if (event.schema && event.table) {
-                if (event.pk) {
-                    nats.publish(event.schema + '.' + event.table + '.' + event.pk, JSON.stringify(event));
-                } else {
-                    /* TODO: validate behavior of logical decoding and decide how this should be documented/handled for
-                       tables without have primary keys */
-                    nats.publish(event.schema + '.' + event.table, JSON.stringify(event));
-                }
+                subject = event.schema + '.' + event.table + (event.pk ? ('.' + event.pk) : '');
             } else if (event.ns && event.pk) {
-                nats.publish(event.ns + '.' + event.pk, JSON.stringify(event));
+                subject = event.ns + '.' + event.pk;
+            }
+
+            nats.publish(subject, config.publishEventData ? JSON.stringify(event) : null);
+
+            if (cachePrefix) {
+                action = event.type === 'update' ? 'invalidate.' : event.action === 'delete' ? 'purge.' : 'populate.';
+                nats.publish(cachePrefix + action + subject);
             }
         });
     },
@@ -27,6 +31,14 @@ module.exports = {
         if (typeof config.server === 'string') {
             config.servers = [config.server];
             delete config.server;
+        }
+
+        if (typeof config.publishEventData !== 'boolean') {
+            config.publishEventData = true;
+        }
+
+        if (typeof config.cachePrefix !== 'string') {
+            config.cachePrefix = false;
         }
 
         return errors;
