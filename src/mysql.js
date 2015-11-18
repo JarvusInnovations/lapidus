@@ -262,9 +262,80 @@ MySql.prototype.start = function start(cb) {
         serverId: self.serverId
     });
 
-    cb && cb(null);
+    zongji.ctrlConnection.on('connect', function(err) {
+        cb && cb(err);
+
+        setInterval(function() {
+            self.test(function(err, results) {
+                if (results) {
+                    console.log(JSON.stringify(results));
+                }
+            });
+        }, 30000);
+    });
 };
 
+MySql.prototype.ping = function ping(cb) {
+    var start = new Date().getTime(),
+        host = this.zongji.ctrlConnection.config.host;
+
+    this.zongji.ctrlConnection.ping(function(error) {;
+        cb & cb(error, {
+            latency: new Date().getTime() - start,
+            connected: !!error,
+            error: error,
+            host: host
+        });
+    });
+};
+
+MySql.prototype.test = function test(cb) {
+    var self = this,
+        start,
+        host = this.zongji.ctrlConnection.config.host,
+        origEmitValue = self.emitEvent;
+
+    this.zongji.ctrlConnection.query(
+        'CREATE TABLE IF NOT EXISTS `lapidus`.`lapidus_healthcheck` (ID integer PRIMARY KEY, last_checked TIMESTAMP);',
+        function(error) {
+            if (error) {
+                error.host = host;
+                self.emitEvent = origEmitValue;
+                return cb & cb(error, null);
+            }
+
+            start = new Date().getTime();
+
+            self.emitEvent = true;
+
+            self.zongji.ctrlConnection.query(
+                'INSERT INTO `lapidus`.`lapidus_healthcheck` VALUES (' + process.pid + ', now()) ON DUPLICATE KEY UPDATE last_checked=now();',
+                function(error) {
+                    if (error) {
+                        error.host = host;
+                        self.emitEvent = origEmitValue;
+                        return cb & cb(error, null);
+                    }
+                });
+
+            function handler(event) {
+                if (event.table === 'lapidus_healthcheck' && event.pk === process.pid) {
+
+                    cb & cb(null, {
+                        latency: new Date().getTime() - start,
+                        connected: !!error,
+                        error: error,
+                        host: host
+                    });
+
+                    self.removeListener('event', handler);
+                    self.emitEvent = origEmitValue;
+                }
+            }
+
+            self.on('event', handler);
+        }
+    );
 };
 
 module.exports = MySql;
