@@ -21,10 +21,10 @@ process.on('message', function (msg) {
         pg = new PostgresLogicalReceiver(config);
 
         for (var plugin in config.plugins) {
-            var config = config.plugins[plugin];
+            var pluginConfig = config.plugins[plugin];
             plugin = require('./plugins/' + plugin);
             plugins.push(plugin);
-            plugin.init(config, pg);
+            plugin.init(pluginConfig, pg);
         }
 
 

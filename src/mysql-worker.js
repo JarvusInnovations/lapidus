@@ -22,10 +22,10 @@ process.on('message', function (msg) {
         mysql = new MySql(config);
 
         for (var plugin in config.plugins) {
-            var config = config.plugins[plugin];
+            var pluginConfig = config.plugins[plugin];
             plugin = require('./plugins/' + plugin);
             plugins.push(plugin);
-            plugin.init(config, mysql);
+            plugin.init(pluginConfig, mysql);
         }
 
         mysql.start(function (err) {
