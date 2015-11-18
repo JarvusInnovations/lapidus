@@ -56,7 +56,7 @@ function MySql(cfg) {
     this.onDeleteWrapper = (typeof cfg.onDeleteWrapper === 'function') ? cfg.onDeleteWrapper : this._onEventsWrapper;
     this.onEventWrapper  = (typeof cfg.onEventWrapper === 'function')  ? cfg.onEventWrapper : this._onEventsWrapper;
 
-    this.schemaTablePrimaryKeys = cfg.schemaTablePrimaryKeys || {};
+    this.schemaTableMap = cfg.schemaTableMap || {};
 }
 
 MySql.prototype = new EventEmitter();
@@ -94,100 +94,42 @@ Object.defineProperty(MySql.prototype, 'emitEvents', {
     }
 });
 
-MySql.prototype.getPrimaryKeys = function getPrimaryKeys(schema, table, cb) {
-    'use strict';
-
-    var searchQuery = "t.TABLE_SCHEMA != 'mysql'";
-
-    // Swizzle parameters
-    if (typeof schema === 'function') {
-        cb = schema;
-        schema = null;
-        table = null;
-    } else if (typeof table === 'function') {
-        cb = table;
-        table = null;
-    }
-
-    if (schema) {
-        searchQuery = `t.TABLE_SCHEMA = '${schema}'`;
-    }
-
-    if (table) {
-        searchQuery += ` AND t.TABLE_NAME = '${table}'`;
-    }
-
-    this.zongji.ctrlConnection.query(`
-        SELECT t.TABLE_SCHEMA AS 'schema',
-               t.TABLE_NAME AS 'table',
-               k.COLUMN_NAME AS 'column'
-          FROM information_schema.TABLE_CONSTRAINTS t
-          JOIN information_schema.KEY_COLUMN_USAGE k
-         USING (CONSTRAINT_NAME, TABLE_SCHEMA, TABLE_NAME)
-         WHERE t.CONSTRAINT_TYPE = 'PRIMARY KEY' AND ${searchQuery}`,
-        function (err, pks) {
-            if (err) {
-                return cb && cb(err, null);
-            }
-
-            console.log('MySQL: Found ' + pks.length + ' primary keys... caching for fast lookups');
-
-            cb && cb(err, pks);
-        });
-};
-
-MySql.prototype.updatePrimaryKeys = function (schema, table, cb) {
-    var self = this;
-
-    self.updatePrimaryKeys.pending = true;
-
-    self.getPrimaryKeys(schema, table, function (err, pks) {
-
-        if (err) {
-            if (!cb) {
-                console.error(err);
-            } else {
-                cb(err);
-            }
-            self.updatePrimaryKeys.pending = false;
-            return;
-        }
-
-        pks.forEach(function (pk) {
-            self.schemaTablePrimaryKeys[pk.schema] = self.schemaTablePrimaryKeys[pk.schema] || {};
-            self.schemaTablePrimaryKeys[pk.schema][pk.table] = pk.column;
-        });
-
-        self.updatePrimaryKeys.pending = false;
-        cb && cb(err);
-    });
-};
-
 MySql.prototype._binLogHandler = function _binLogHandler(evt) {
     var self = this,
         eventName = evt.getEventName(),
+        tableMap = evt.tableMap[evt.tableId],
         tableName = evt.tableMap[evt.tableId].tableName,
         schemaName = evt.tableMap[evt.tableId].parentSchema,
-        pk, row, len, x, event;
+        pk, row, len, x, event, constraints;
 
     if (eventName === 'tablemap') {
-        if (!self.schemaTablePrimaryKeys[schemaName]) {
-            self.schemaTablePrimaryKeys[schemaName] = {};
-            console.log(`MySql: Encountered a newly created schema fetching PKs for all tables in:  ${schemaName}`);
-            self.updatePrimaryKeys(schemaName);
-        } else if (typeof self.schemaTablePrimaryKeys[schemaName][tableName] === 'undefined') {
-            console.log(`MySql: Encountered a newly created table in ${schemaName} fetching PKs for: ${tableName}`);
-            // Differentiate between newly created tables versus old tables without a primary key
-            self.schemaTablePrimaryKeys[schemaName][tableName] = null;
-            self.updatePrimaryKeys(schemaName, tableName);
+        self.schemaTableMap[schemaName] || (self.schemaTableMap[schemaName] = {});
+        self.schemaTableMap[schemaName][tableName] || (self.schemaTableMap[schemaName][tableName] = {});
+
+        constraints = {};
+
+        evt.tableMap[evt.tableId].columns.forEach(function(column) {
+            var constraint = column.constraint;
+
+            if (constraint && (constraint.type === 'PRIMARY KEY' || constraint.type === 'UNIQUE')) {
+                constraints[constraint.name] ||  (constraints[constraint.name] = []);
+                constraints[constraint.name][constraint.position-1] = column.name;
+            }
+        });
+
+        if (constraints.PRIMARY) {
+            tableMap.pk = constraints.PRIMARY[0];
         }
+
+        tableMap.constraints = constraints;
+
+        self.schemaTableMap[schemaName][tableName] = tableMap;
+
         return;
     }
 
-    // TODO: Events for newly created tables with PK may not behave properly unless we can pause the queue or backlog
-    // events until the PK is set by the code block above.
-
-    pk = self.schemaTablePrimaryKeys[schemaName][tableName];
+    // TODO: How can we fallback to identifying a row by a UNIQUE constraint in absence of a PRIMARY KEY?
+    pk = self.schemaTableMap[schemaName][tableName].pk;
     len = evt.rows.length;
 
     if (eventName === 'deleterows') {
@@ -314,19 +256,15 @@ MySql.prototype.start = function start(cb) {
 
     zongji.on('binlog', self._binLogHandler.bind(self));
 
-    self.updatePrimaryKeys(function (err) {
-        if (err) {
-            throw err;
-        }
-
-        zongji.start({
-            includeEvents: ['tablemap', 'writerows', 'updaterows', 'deleterows'],
-            startAtEnd: true,
-            serverId: self.serverId
-        });
-
-        cb && cb(null);
+    zongji.start({
+        includeEvents: ['tablemap', 'writerows', 'updaterows', 'deleterows'],
+        startAtEnd: true,
+        serverId: self.serverId
     });
+
+    cb && cb(null);
+};
+
 };
 
 module.exports = MySql;
