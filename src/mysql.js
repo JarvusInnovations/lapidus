@@ -4,6 +4,8 @@ var EventEmitter = require('events').EventEmitter,
 function MySql(cfg) {
     'use strict';
 
+    var self = this;
+
     this.zongji = new ZongJi({
         host: cfg.hostname,
         user: cfg.username,
@@ -27,13 +29,22 @@ function MySql(cfg) {
     this.emitUpdate = (typeof cfg.emitUpdate === 'boolean') ? cfg.emitUpdate : this._emitEvents;
     this.emitDelete = (typeof cfg.emitDelete === 'boolean') ? cfg.emitDelete : this._emitEvents;
     this.emitEvent =  (typeof cfg.emitEvent === 'boolean') ? cfg.emitEvent : this._emitEvents;
+    this.emitError = (typeof cfg.emitEvent === 'boolean') ? cfg.emitEvent : true;
 
-    this.onInsert = (typeof cfg.onInsert === 'function') ? cfg.onInsert : false;
-    this.onUpdate = (typeof cfg.onUpdate === 'function') ? cfg.onUpdate : false;
-    this.onDelete = (typeof cfg.onDelete === 'function') ? cfg.onDelete : false;
-    this.onEvent =  (typeof cfg.onEvent === 'function') ? cfg.onEvent : false;
+    this.onInsert = (typeof cfg.onInsert === 'function') ? cfg.onInsert.bind(this) : false;
+    this.onUpdate = (typeof cfg.onUpdate === 'function') ? cfg.onUpdate.bind(this) : false;
+    this.onDelete = (typeof cfg.onDelete === 'function') ? cfg.onDelete.bind(this) : false;
+    this.onEvent =  (typeof cfg.onEvent === 'function')  ? cfg.onEvent.bind(this)  : false;
+    this.onError =  (typeof cfg.onError === 'function')  ? cfg.onError.bind(this)  : false;
 
-    Object.defineProperty(this, "_onEventsWrapper", {
+    if (this.emitError || this.onError) {
+        this.zongji.on('error', function (error) {
+            self.emitError && self.emit('error', error);
+            self.onError && self.onError(error);
+        });
+    }
+
+    Object.defineProperty(this, '_onEventsWrapper', {
         enumerable: false,
         writable: true
     });
