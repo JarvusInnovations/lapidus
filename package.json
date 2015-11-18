@@ -46,7 +46,7 @@
     "mongo-oplog": "^1.0.1",
     "nats": "^0.4.4",
     "pg-config": "0.0.1",
-    "zongji": "jmealo/zongji#master"
+    "zongji": "jmealo/zongji#healthcheck"
   },
   "preferGlobal": true,
   "bin": {
