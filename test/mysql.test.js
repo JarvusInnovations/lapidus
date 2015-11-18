@@ -17,10 +17,6 @@ describe('MySQL', function () {
         assert.equal(output.stderr.toString(), '');
     });
 
-    it('creates a lookup table of primary keys', function () {
-        assert.notEqual(output.stdout.toString().indexOf('caching for fast lookups'), -1);
-    });
-
     describe('Can be used as a module', function () {
         var mysql,
             eventsWrapper;
