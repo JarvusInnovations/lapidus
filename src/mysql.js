@@ -323,7 +323,7 @@ MySql.prototype.test = function test(cb) {
 
                     cb & cb(null, {
                         latency: new Date().getTime() - start,
-                        connected: !!error,
+                        connected: true,
                         error: error,
                         host: host
                     });
