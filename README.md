@@ -214,9 +214,7 @@ Insert, Update and Delete events will be published using the subject ``schema.ta
 * NATS does not guarantee in order delivery so a blocking variant is not likely (it's 10-20 LoC if you're interested).
 
 # Production status
-Lapidus is currently under heavy development. It is not recommended for use in production yet. It will be deployed
-with 5k simultaneous users by the end of 2015. Please share your results. Benchmark and load testing script will be
-made available.
+Lapidus is currently under heavy development. It is deployed with 1250 simultaneous users on very modest hardware using the MySQL and PostgreSQL backends and NATS plugin. Typical latency between MySQL -> Lapidus -> NATS is 1ms - 3ms. Please share your results. Benchmark and load testing scripts will be made available.
 
 # Resource requirements
 
