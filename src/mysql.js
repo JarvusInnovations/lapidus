@@ -16,6 +16,10 @@ function MySql(cfg) {
 
     EventEmitter.call(this);
 
+    this.zongji.on('error', function(error) {
+       self.emit('error', error);
+    });
+
     // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
 
     Object.defineProperty(this, "_emitEvents", {
