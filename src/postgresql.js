@@ -84,6 +84,8 @@ function PostgresLogicalReceiver(options) {
     this.onDeleteWrapper = (typeof options.onDeleteWrapper === 'function') ? options.onDeleteWrapper : this._onEventsWrapper;
     this.onEventWrapper  = (typeof options.onEventWrapper === 'function')  ? options.onEventWrapper : this._onEventsWrapper;
 
+    this.excludeTables = options.excludeTables || null;
+
     EventEmitter.call(this);
 }
 
@@ -394,6 +396,12 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                             // for each row to a pg_temp_xxxxxxx table)
                             if (tableName.substr(0, 8) === 'pg_temp_') {
                                 return;
+                            }
+
+                            if (self.excludeTables) {
+                                if (self.excludeTables.indexOf(tableName) !== -1) {
+                                    return;
+                                }
                             }
 
                             // SPEED HACK: Avoid concatenation, toLowerCase and Object lookup (6-8x boost)
