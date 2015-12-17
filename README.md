@@ -60,8 +60,8 @@ expire_logs_days = 10    # Optional
 binlog_format    = row
 ```
 
-**Create a user with replication permissions:**
-```
+**Create a user with replication permissions and select permissions:**
+```sql
 GRANT REPLICATION SLAVE, REPLICATION CLIENT, SELECT ON *.* TO 'lapidus'@'localhost' IDENTIFIED BY 'secure-password';
 ```
 
@@ -101,7 +101,10 @@ backend and publish all events to NATS using the NATS plugin:
       "username": "jacob",
       "database": "jacob",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
-      "serverId": 1
+      "serverId": 1,
+      "excludeTables": [
+        "sessions"
+      ]
     },
 
     {
@@ -212,9 +215,18 @@ Insert, Update and Delete events will be published using the subject ``schema.ta
 * At this time, transactions and other event types are not published to NATS.
 * Each worker uses its own connection to NATS using non-blocking event emitters; out of order delivery is likely.
 * NATS does not guarantee in order delivery so a blocking variant is not likely (it's 10-20 LoC if you're interested).
+* ``pg_temp_`` tables are filtered. (TOAST and materialized views generate events that most would consider noise.)
+
+### Gotchas
+* If you encounter issues with the WAL stream failing due to SSL connection issues when connecting over a VPN check your
+MTU. This is not an issue with Lapidus or pg_recv_logical and must be addressed as a network/connection issue. You may
+see "Invalid Syntax Error" in the Lapidus log due to JSON being split into multiple messages. (Lapidus is expecting
+line delimited JSON).
 
 # Production status
-Lapidus is currently under heavy development. It is deployed with 1250 simultaneous users on very modest hardware using the MySQL and PostgreSQL backends and NATS plugin. Typical latency between MySQL -> Lapidus -> NATS is 1ms - 3ms. Please share your results. Benchmark and load testing scripts will be made available.
+Lapidus is currently under heavy development. It is deployed with 1250 simultaneous users on very modest hardware using
+the MySQL and PostgreSQL backends and NATS plugin. Typical latency between MySQL -> Lapidus -> NATS is 1ms - 3ms. Please
+share your results. Benchmark and load testing scripts will be made available.
 
 # Resource requirements
 
