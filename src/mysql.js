@@ -106,6 +106,12 @@ MySql.prototype._binLogHandler = function _binLogHandler(evt) {
         schemaName = evt.tableMap[evt.tableId].parentSchema,
         pk, row, len, x, event, constraints;
 
+    if (self.excludeTables) {
+        if (self.excludeTables.indexOf(tableName) !== -1) {
+            return;
+        }
+    }
+
     if (eventName === 'tablemap') {
         self.schemaTableMap[schemaName] || (self.schemaTableMap[schemaName] = {});
         self.schemaTableMap[schemaName][tableName] || (self.schemaTableMap[schemaName][tableName] = {});
