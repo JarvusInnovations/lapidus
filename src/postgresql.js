@@ -252,7 +252,6 @@ PostgresLogicalReceiver.prototype.createSlot = function createSlot(slot, callbac
 
     execFile(this.binPath + '/pg_recvlogical', [
         '--slot=' + slot,
-        '--if-not-exists',
         '--create-slot',
         '--plugin=' + this.decodingPlugin,
         '--dbname=' + this.database,
@@ -261,7 +260,9 @@ PostgresLogicalReceiver.prototype.createSlot = function createSlot(slot, callbac
         timeout: this.timeout
     }, function (error, stdout, stderr) {
         if (error) {
-            return callback(new Error('Failed to create slot: ' + stderr), false);
+            if (error.message.indexOf('already exists') === -1) {
+                return callback(new Error('Failed to create slot: ' + stderr), false);
+            }
         }
 
         callback(null, stdout);
@@ -284,7 +285,6 @@ PostgresLogicalReceiver.prototype.dropSlot = function dropSlot(slot, callback) {
 
     execFile(this.binPath + '/pg_recvlogical', [
         '--slot=' + slot,
-        '--if-not-exists',
         '--drop-slot',
         '--dbname=' + this.database,
     ], {
@@ -345,7 +345,6 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
 
         pg_recvlogical = spawn(self.binPath + '/pg_recvlogical', [
             '--slot=' + slot,
-            '--if-not-exists',
             '--plugin=' + self.decodingPlugin,
             '--dbname=' + self.database,
             '--start',
@@ -461,9 +460,9 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                             }
                         }
                     } catch (e) {
-                        self.emit('error', e);
-                        self.debug && console.error(e);
-                        self.debug && console.error(line);
+                        self.emit('error', e + line);
+                        self.debug && console.error('PostgreSQL: ' + e);
+                        self.debug && console.error('PostgreSQL: ' + line);
                     }
                 }
             });

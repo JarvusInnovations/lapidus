@@ -29,7 +29,7 @@ process.on('message', function (msg) {
 
 
         pg.on('error', function(err) {
-           console.error(err);
+           console.error('PostgreSQL: ' + err);
         });
 
         pg.init(function(err) {
