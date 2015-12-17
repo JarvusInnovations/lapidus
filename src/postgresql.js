@@ -391,6 +391,12 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                         if (type === 'table') {
                             tableName = line.name;
 
+                            // HACK: Filter out pg_temp tables (if you refresh a materialized view you'll get an INSERT
+                            // for each row to a pg_temp_xxxxxxx table)
+                            if (tableName.substr(0, 8) === 'pg_temp_') {
+                                return;
+                            }
+
                             // SPEED HACK: Avoid concatenation, toLowerCase and Object lookup (6-8x boost)
                             if (line.change == 'INSERT') {
                                 action = 'insert';
