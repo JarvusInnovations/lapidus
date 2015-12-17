@@ -5,6 +5,10 @@ module.exports = {
         console.log('Connecting to nats on: ' + config.servers.join(', '));
         nats = nats.connect(config);
 
+        nats.on('error', function(err) {
+           console.error('NATS: ' + err);
+        });
+
         eventEmitter.on('event', function(event) {
             var subject,
                 action,
