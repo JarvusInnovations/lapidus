@@ -1,7 +1,7 @@
 {
   "name": "lapidus",
   "description": "Stream database changes fast, in order, with little to no performance penalty.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "keywords": [
     "postgresql",
     "postgres",
