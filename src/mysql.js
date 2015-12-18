@@ -61,6 +61,8 @@ function MySql(cfg) {
     this.onEventWrapper  = (typeof cfg.onEventWrapper === 'function')  ? cfg.onEventWrapper : this._onEventsWrapper;
 
     this.schemaTableMap = cfg.schemaTableMap || {};
+
+    this.excludeTables = options.excludeTables || null;
 }
 
 MySql.prototype = new EventEmitter();
