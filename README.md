@@ -17,8 +17,9 @@ npm install -g lapidus
 ```
 
 ## PostgreSQL
-You'll need PostgreSQL 9.4 or higher with logical replication configured and the decoding_json plugin installed and
-loaded. Forks of PostgreSQL should be compatible provided they ship with pg_recvlogical.
+You'll need PostgreSQL 9.4 or higher with logical replication configured and the
+[decoding_json](https://github.com/leptonix/decoding-json) plugin installed and loaded. Forks of PostgreSQL should be
+compatible provided they ship with pg_recvlogical.
 
 **To install the decoding_json logical decoding plugin on Ubuntu:**
 ```shell
