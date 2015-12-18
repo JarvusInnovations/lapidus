@@ -62,7 +62,7 @@ function MySql(cfg) {
 
     this.schemaTableMap = cfg.schemaTableMap || {};
 
-    this.excludeTables = options.excludeTables || null;
+    this.excludeTables = cfg.excludeTables || null;
 }
 
 MySql.prototype = new EventEmitter();
