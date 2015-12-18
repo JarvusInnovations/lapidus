@@ -36,16 +36,11 @@
   },
   "dependencies": {
     "async": "^1.4.2",
-    "consul": "^0.18.1",
     "errno": "^0.1.4",
-    "hiredis": "^0.4.1",
     "jsonlint": "^1.6.2",
-    "minimatch": "^3.0.0",
-    "redis": "^2.3.0",
     "yargs": "^3.25.0"
   },
   "optionalDependencies": {
-    "ioredis": "^1.9.0",
     "mongo-oplog": "^1.0.1",
     "nats": "^0.4.4",
     "pg-config": "0.0.1",
