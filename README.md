@@ -11,6 +11,11 @@ return a copy of the operation (for example, a `$rename` operation will return a
 currently be used as a daemon or Node.js module. Support for piping line-delimited JSON to other processes is a high
 priority.
 
+## To install
+```
+npm install -g lapidus
+```
+
 ## PostgreSQL
 You'll need PostgreSQL 9.4 or higher with logical replication configured and the decoding_json plugin installed and
 loaded. Forks of PostgreSQL should be compatible provided they ship with pg_recvlogical.
