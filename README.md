@@ -3,6 +3,7 @@
 
 [![Build Status](https://travis-ci.org/JarvusInnovations/lapidus.svg)](https://travis-ci.org/JarvusInnovations/lapidus)
 [![Coverage Status](https://coveralls.io/repos/JarvusInnovations/lapidus/badge.svg?branch=master&service=github)](https://coveralls.io/github/JarvusInnovations/lapidus?branch=master)
+[![Join the chat at https://gitter.im/JarvusInnovations/lapidus](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JarvusInnovations/Lpaidus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Getting Started
 Currently MySQL and PostgreSQL databases are fully supported. MongoDB supports inserts and deletes, however, updates
