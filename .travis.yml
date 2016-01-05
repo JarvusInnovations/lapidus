@@ -12,6 +12,12 @@ node_js:
 notifications:
   email:
     - jeffreymealo@gmail.com
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/3d28101cc9cfe19e264c
+    on_success: change
+    on_failure: always
+    on_start: never
 
 before_install:
   - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
