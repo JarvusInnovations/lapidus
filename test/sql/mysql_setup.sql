@@ -4,9 +4,10 @@ CREATE USER IF NOT EXISTS sawyer IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';
 CREATE DATABASE IF NOT EXISTS jacob;
 CREATE DATABASE IF NOT EXISTS sawyer;
 
-SET GLOBAL binlog_format=ROW;
-SET sql_log_bin = 1;
-SET GLOBAL binlog_annotate_row_events=ON;
+-- Uncomment these lines for MariaDB
+-- SET GLOBAL binlog_format=ROW;
+-- SET sql_log_bin = 1;
+-- SET GLOBAL binlog_annotate_row_events=ON;
 
 SET GLOBAL time_zone="+00:00";
 
