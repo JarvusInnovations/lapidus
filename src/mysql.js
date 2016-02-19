@@ -144,6 +144,7 @@ MySql.prototype._binLogHandler = function _binLogHandler(evt) {
     pk = self.schemaTableMap[schemaName][tableName].pk;
     len = evt.rows.length;
 
+    // TODO: should generic events/handlers fire before specific handlers?
     if (eventName === 'deleterows') {
         for (x = 0; x < len; x++) {
             row = evt.rows[x];
@@ -165,6 +166,8 @@ MySql.prototype._binLogHandler = function _binLogHandler(evt) {
             }
 
             if (self.onEvent) {
+                event.type = 'delete';
+
                 if (self.onEventWrapper) {
                     self.onEventWrapper(function() {
                         self.onEvent(event, evt);
@@ -173,6 +176,8 @@ MySql.prototype._binLogHandler = function _binLogHandler(evt) {
                     self.onEvent(event, evt);
                 }
             }
+
+            delete event.type;
 
             self.emitDelete && self.emit('delete', event);
 
@@ -203,6 +208,8 @@ MySql.prototype._binLogHandler = function _binLogHandler(evt) {
             }
 
             if (self.onEvent) {
+                event.type = 'insert';
+
                 if (self.onEventWrapper) {
                     self.onEventWrapper(function() {
                         self.onEvent(event, evt);
@@ -211,6 +218,8 @@ MySql.prototype._binLogHandler = function _binLogHandler(evt) {
                     self.onEvent(event, evt);
                 }
             }
+
+            delete event.type;
 
             self.emitInsert && self.emit('insert', event);
 
@@ -241,6 +250,8 @@ MySql.prototype._binLogHandler = function _binLogHandler(evt) {
             }
 
             if (self.onEvent) {
+                event.type = 'update';
+
                 if (self.onEventWrapper) {
                     self.onEventWrapper(function() {
                         self.onEvent(event, evt);
@@ -249,6 +260,8 @@ MySql.prototype._binLogHandler = function _binLogHandler(evt) {
                     self.onEvent(event, evt);
                 }
             }
+
+            delete event.type;
 
             self.emitUpdate && self.emit('update', event);
 
