@@ -2,12 +2,11 @@
   "backends": [
     {
       "type": "mysql",
-      "hostname": "127.0.0.1",
+      "hostname": "the.island.is.not.a.hostname",
       "username": "jacob",
       "database": "jacob",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
-      "serverId": 1,
-      "emitEvents": true
+      "serverId": 1
     }
   ]
 }
