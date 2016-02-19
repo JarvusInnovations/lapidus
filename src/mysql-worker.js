@@ -32,6 +32,8 @@ process.on('message', function (msg) {
             if (err) {
                 throw err;
             }
+
+            console.log(`MySQL: Connected to ${config.database} on ${config.hostname} as ${config.username} [#${config.serverId}]`);
         });
     }
 });
