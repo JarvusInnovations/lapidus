@@ -45,7 +45,7 @@ describe('MySQL', function () {
         });
     });
 
-    describe('Can be used as a module', function () {
+    describe('can be used as a module', function () {
         var mysql,
             eventsWrapper,
             config = require(path.join(__dirname, './config/mysql-only.json')).backends[0],
@@ -202,24 +202,125 @@ describe('MySQL', function () {
 
             it('emits an "insert" event', function(done) {
                 function handler(evt) {
-                    assert(evt.item.id === 2);
+                    assert.equal(evt.item.id, 2);
                     done();
                 }
 
                 mysql.once('insert', handler);
             });
 
-            it('executes an onInsert event', function(done) {
+            it('executes an onInsert handler', function(done) {
                 mysql.onInsert = function (evt) {
-                    assert(evt.item.id === 3);
+                    assert.equal(evt.item.id, 3);
                     mysql.onInsert = null;
                     done();
                 };
             });
 
-            it('executes an onEvent event', function(done) {
+            it('executes an onEvent handler', function(done) {
                 mysql.onEvent = function (evt) {
-                    assert(evt.item.id === 4);
+                    assert.equal(evt.item.id, 4);
+                    assert.equal(evt.type, 'insert');
+                    mysql.onEvent = null;
+                    done();
+                };
+            });
+        });
+
+        describe('to stream update events', function() {
+            var idx = 0;
+
+            beforeEach(function() {
+                var sql = `UPDATE jacob.test_table SET nullable = "${++idx}" WHERE id = ${idx};`;
+
+                mysql.zongji.ctrlConnection.query(sql, function (err, rows, fields) {
+                    assert.ifError(err);
+                });
+            });
+
+            it('emits an "event" event', function(done) {
+                function handler(evt) {
+                    assert.equal(evt.type, 'update', 'event type should be properly set');
+                    assert.equal(evt.item.id, idx, 'id should match idx');
+                    assert.equal(evt.item.nullable, evt.item.id, 'nullable should match id');
+                    done();
+                }
+
+                mysql.once('event', handler);
+            });
+
+            it('emits an "update" event', function(done) {
+                function handler(evt) {
+                    assert.equal(evt.item.id, idx);
+                    assert.equal(evt.item.nullable, evt.item.id);
+                    done();
+                }
+
+                mysql.once('update', handler);
+            });
+
+            it('executes an onUpdate handler', function(done) {
+                mysql.onUpdate = function (evt) {
+                    assert.equal(evt.item.id, idx);
+                    assert.equal(evt.item.nullable, evt.item.id);
+                    mysql.onUpdate = null;
+                    done();
+                };
+            });
+
+            it('executes an onEvent handler', function(done) {
+                mysql.onEvent = function (evt) {
+                    assert.equal(evt.type, 'update');
+                    assert.equal(evt.item.id, idx);
+                    assert.equal(evt.item.nullable, evt.item.id);
+                    mysql.onEvent = null;
+                    done();
+                };
+            });
+        });
+
+        describe('to stream delete events', function() {
+            var idx = 0;
+
+            beforeEach(function() {
+                var sql = `DELETE FROM jacob.test_table WHERE id = ${++idx};`;
+
+                mysql.zongji.ctrlConnection.query(sql, function (err, rows, fields) {
+                    assert.ifError(err);
+                });
+            });
+
+            it('emits an "event" event', function(done) {
+                function handler(evt) {
+                    assert.equal(evt.type, 'delete');
+                    assert.equal(evt.pk, idx);
+                    done();
+                }
+
+                mysql.once('event', handler);
+            });
+
+            it('emits a "delete" event', function(done) {
+                function handler(evt) {
+                    assert.equal(evt.pk, idx);
+                    done();
+                }
+
+                mysql.once('delete', handler);
+            });
+
+            it('executes an onDelete handler', function(done) {
+                mysql.onDelete = function (evt) {
+                    assert.equal(evt.pk, idx);
+                    mysql.onDelete = null;
+                    done();
+                };
+            });
+
+            it('executes an onEvent handler', function(done) {
+                mysql.onEvent = function (evt) {
+                    assert.equal(evt.type, 'delete');
+                    assert.equal(evt.pk, idx);
                     mysql.onEvent = null;
                     done();
                 };
