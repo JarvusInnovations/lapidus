@@ -345,7 +345,7 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
         }
 
 
-        pg_recvlogical = spawn(self.binPath + '/pg_recvlogical', [
+        self.spawn = pg_recvlogical = spawn(self.binPath + '/pg_recvlogical', [
             '--slot=' + slot,
             '--plugin=' + self.decodingPlugin,
             '--dbname=' + self.database,
@@ -354,6 +354,7 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
         ], {env: self.env, detached: false});
 
         process.on('exit', function() {
+            // If the worker crashes, kill pg_recvlogical to avoid missing output
             if (self.spawn && typeof self.spawn.kill === 'function') {
                 self.spawn.kill();
             }
@@ -479,8 +480,6 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
         pg_recvlogical.on('close', function (code) {
             self.emit((code === 0) ? 'stop' : 'error', 'pg_recvlogical exited with code: ' + code);
         });
-
-        self.spawn = pg_recvlogical;
 
         callback(null, pg_recvlogical);
     });
