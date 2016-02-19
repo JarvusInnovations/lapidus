@@ -283,10 +283,10 @@ MySql.prototype.ping = function ping(cb) {
     var start = new Date().getTime(),
         host = this.zongji.ctrlConnection.config.host;
 
-    this.zongji.ctrlConnection.ping(function(error) {;
+    this.zongji.ctrlConnection.ping(function(error) {
         cb & cb(error, {
             latency: new Date().getTime() - start,
-            connected: !!error,
+            connected: error === null,
             error: error,
             host: host
         });
