@@ -54,6 +54,7 @@ describe('MySQL', function () {
                 'onUpdate',
                 'onDelete',
                 'onEvent',
+                'onError',
 
                 'onEventsWrapper',
                 'onEventWrapper',
@@ -64,7 +65,8 @@ describe('MySQL', function () {
                 'emitEvents',
                 'emitDelete',
                 'emitInsert',
-                'emitUpdate'
+                'emitUpdate',
+                'emitError'
             ];
 
         this.timeout(5000);
@@ -324,6 +326,66 @@ describe('MySQL', function () {
                     mysql.onEvent = null;
                     done();
                 };
+            });
+        });
+
+        describe('filters the event stream', function() {
+
+            it ('by table (match)', function(done) {
+                mysql.excludeTables = ['test_table'];
+
+                mysql.onInsert = function() {
+                    assert(false, 'onInsert event should not run on excluded table');
+                };
+
+                var sql = `INSERT INTO jacob.test_table
+                                (first_name, last_name, sex, dob, nullable)
+                         VALUES ('Jack', 'Shepard', 'M','1952-11-29T12:34:56.000Z', null);
+                 `;
+
+
+                mysql.zongji.ctrlConnection.query(sql, function (err, rows, fields) {
+                    assert.ifError(err);
+                    setTimeout(done, 1000);
+                });
+            });
+
+            it ('by table (non-match)', function(done) {
+                mysql.excludeTables = ['test_table2'];
+
+                mysql.onInsert = function(event) {
+                    assert.equal(event.item.first_name, 'Sayid');
+                    done();
+                };
+
+                var sql = `INSERT INTO jacob.test_table
+                                (first_name, last_name, sex, dob, nullable)
+                         VALUES ('Sayid', 'Jarrah', 'M','1952-11-29T12:34:56.000Z', null);
+                 `;
+
+
+                mysql.zongji.ctrlConnection.query(sql, function (err, rows, fields) {
+                    assert.ifError(err);
+                });
+            });
+
+            it ('by table (empty)', function(done) {
+                mysql.onInsert = function(event) {
+                    assert.equal(event.item.first_name, 'John');
+                    done();
+                };
+
+                mysql.excludeTables = [];
+
+                var sql = `INSERT INTO jacob.test_table
+                                (first_name, last_name, sex, dob, nullable)
+                         VALUES ('John', 'Locke', 'M','1952-11-29T12:34:56.000Z', null);
+                 `;
+
+
+                mysql.zongji.ctrlConnection.query(sql, function (err, rows, fields) {
+                    assert.ifError(err);
+                });
             });
         });
     });
