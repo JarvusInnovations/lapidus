@@ -1,7 +1,7 @@
 {
   "name": "lapidus",
   "description": "Stream database changes fast, in order, with little to no performance penalty.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "keywords": [
     "postgresql",
     "postgres",
@@ -35,16 +35,16 @@
     "coveralls": "^2.11.4"
   },
   "dependencies": {
-    "async": "^1.4.2",
+    "async": "^1.5.2",
     "errno": "^0.1.4",
     "jsonlint": "^1.6.2",
-    "yargs": "^3.25.0"
+    "yargs": "^3.32.0"
   },
   "optionalDependencies": {
     "mongo-oplog": "^1.0.1",
     "nats": "^0.4.4",
     "pg-config": "0.0.1",
-    "zongji": "jmealo/zongji#healthcheck"
+    "zongji": "jmealo/zongji#master"
   },
   "preferGlobal": true,
   "bin": {
