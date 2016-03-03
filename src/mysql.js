@@ -16,7 +16,7 @@ function MySql(cfg) {
 
     EventEmitter.call(this);
 
-    // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
+    // In V8, reading a boolean value ste 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
 
     Object.defineProperty(this, "_emitEvents", {
         enumerable: false,
