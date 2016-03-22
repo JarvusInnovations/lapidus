@@ -429,8 +429,9 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                                 return;
                             }
 
-                            // TODO: decoding_json doesn't seem to send the keys on INSERT, only on update
-                            pk = line.key ? line.key[Object.keys(line.key)[0]] : line.data.id || line.data.ID;
+                            // TODO: decoding_json doesn't seem to send the keys on INSERT, only on UPDATE / DELETE
+                            // Compound keys come back as JSON objects
+                            pk = line.key || line.data.id || line.data.ID;
 
                             msg = {
                                 table: tableName,
