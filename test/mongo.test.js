@@ -238,7 +238,6 @@ describe('MongoDB', function () {
                         if (err) {
                             return callback && callback(err);
                         }
-                        assert.equal(1, result.result.n);
                         callback && callback();
                     }
                 );
