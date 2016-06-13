@@ -324,6 +324,7 @@ describe('MongoDB', function () {
         });
 
         after(function (done) {
+            mongo.stop();
             db.close();
             done();
         });
