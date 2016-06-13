@@ -2,7 +2,7 @@
   "backends": [
     {
       "type": "mongo",
-      "hostname": "127.0.0.1",
+      "hostname": "127.0.0.1:27017",
       "username": "lapidus",
       "database": "lapidus",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
@@ -12,7 +12,7 @@
 
     {
       "type": "mongo",
-      "hostname": "127.0.0.1",
+      "hostname": "127.0.0.1:27017",
       "username": "walt",
       "database": "lapidus",
       "password": "EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",

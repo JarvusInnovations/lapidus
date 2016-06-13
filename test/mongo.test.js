@@ -48,8 +48,8 @@ describe('MongoDB', function () {
                 });
             });
 
-            eventsWrapper = function eventsWrapper() {
-                return 1 + 1;
+            eventsWrapper = function eventsWrapper(cb) {
+                return cb && cb();
             };
         });
 
@@ -94,12 +94,12 @@ describe('MongoDB', function () {
         });
 
         it('with meta properties that will not overwrite custom values with meta values', function () {
-            function otherFunc() {
-                return 1 + 1;
+            function otherFunc(cb) {
+                return cb && cb();
             }
 
-            function emptyFunc() {
-                return;
+            function emptyFunc(cb) {
+                return cb && cb();
             }
 
             mongo.onInsertWrapper = otherFunc;
@@ -127,22 +127,6 @@ describe('MongoDB', function () {
         });
 
         describe('to stream insert events', function () {
-
-            before(function(done) {
-                var config = require(path.join(__dirname, './config/mongo-only.json')).backends[0];
-
-                mongo = new MongoDb(config);
-
-                mongo.init(function (err) {
-                    assert.ifError(err);
-
-                    mongo.start(function (err) {
-                        assert.ifError(err);
-                        done();
-                    });
-                });
-            });
-
             function insertDocuments(callback) {
                 var collection = db.collection('lapidus');
 

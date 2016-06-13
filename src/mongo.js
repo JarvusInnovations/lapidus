@@ -4,68 +4,70 @@ const util = require('util');
 const EventEmitter = require('events');
 const MongoOplog = require('mongo-oplog');
 
-function Mongo(options) {
+function Mongo(cfg) {
     var connString;
 
-    options = options || {};
+    cfg = cfg || {};
 
-    if (!options.connString) {
+    EventEmitter.call(this);
+
+    if (!cfg.connString) {
         connString = 'mongodb://';
-        if (options.username && options.password) {
-            connString += options.username + ':' + options.password  + '@';
+        if (cfg.username && cfg.password) {
+            connString += cfg.username + ':' + cfg.password  + '@';
         }
 
-        connString += options.hostname || options.host || '127.0.0.1';
+        connString += cfg.hostname || cfg.host || '127.0.0.1';
 
-        if (options.port) {
-            connString += ':' + options.port;
+        if (cfg.port) {
+            connString += ':' + cfg.port;
         }
 
-        connString += '/' + (options.database || 'admin');
+        connString += '/' + (cfg.database || 'admin');
 
-        if (options.replicaSet) {
-            connString += '?replicaSet=' + options.replicaSet;
+        if (cfg.replicaSet) {
+            connString += '?replicaSet=' + cfg.replicaSet;
         }
 
         this.connString = connString;
     }
 
-    for (var prop in options) {
-        this[prop] = options.prop;
-    }
+    // In V8, reading a boolean value ste 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
 
     Object.defineProperty(this, "_emitEvents", {
         enumerable: false,
         writable: true
     });
 
-    // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
+    this._emitEvents = (typeof cfg.emitEvents === 'boolean') ? cfg.emitEvents : true;
 
-    this._emitEvents = (typeof options.emitEvents === 'boolean') ? options.emitEvents : true;
+    this.emitInsert = (typeof cfg.emitInsert === 'boolean') ? cfg.emitInsert : this._emitEvents;
+    this.emitUpdate = (typeof cfg.emitUpdate === 'boolean') ? cfg.emitUpdate : this._emitEvents;
+    this.emitDelete = (typeof cfg.emitDelete === 'boolean') ? cfg.emitDelete : this._emitEvents;
+    this.emitEvent =  (typeof cfg.emitEvent === 'boolean') ? cfg.emitEvent : this._emitEvents;
+    this.emitError = (typeof cfg.emitEvent === 'boolean') ? cfg.emitEvent : true;
 
-    this.emitInsert = (typeof options.emitInsert === 'boolean') ? options.emitInsert : this._emitEvents;
-    this.emitUpdate = (typeof options.emitUpdate === 'boolean') ? options.emitUpdate : this._emitEvents;
-    this.emitDelete = (typeof options.emitDelete === 'boolean') ? options.emitDelete : this._emitEvents;
-    this.emitEvent =  (typeof options.emitEvent === 'boolean') ? options.emitEvent : this._emitEvents;
+    this.onInsert = (typeof cfg.onInsert === 'function') ? cfg.onInsert.bind(this) : false;
+    this.onUpdate = (typeof cfg.onUpdate === 'function') ? cfg.onUpdate.bind(this) : false;
+    this.onDelete = (typeof cfg.onDelete === 'function') ? cfg.onDelete.bind(this) : false;
+    this.onEvent =  (typeof cfg.onEvent === 'function')  ? cfg.onEvent.bind(this)  : false;
+    this.onError =  (typeof cfg.onError === 'function')  ? cfg.onError.bind(this)  : false;
 
-    this.onInsert = (typeof options.onInsert === 'function') ? options.onInsert : false;
-    this.onUpdate = (typeof options.onUpdate === 'function') ? options.onUpdate : false;
-    this.onDelete = (typeof options.onDelete === 'function') ? options.onDelete : false;
-    this.onEvent =  (typeof options.onEvent === 'function') ? options.onEvent : false;
+    if (this.emitError || this.onError) {
+        // TODO: Look into how oplog handles errors
+    }
 
-    Object.defineProperty(this, "_onEventsWrapper", {
+    Object.defineProperty(this, '_onEventsWrapper', {
         enumerable: false,
         writable: true
     });
 
-    this._onEventsWrapper = (typeof options.onEventsWrapper === 'function') ? options.onEventsWrapper : false;
+    this._onEventsWrapper = (typeof cfg.onEventsWrapper === 'function') ? cfg.onEventsWrapper : false;
 
-    this.onInsertWrapper = (typeof options.onInsertWrapper === 'function') ? options.onInsertWrapper : this._onEventsWrapper;
-    this.onUpdateWrapper = (typeof options.onUpdateWrapper === 'function') ? options.onUpdateWrapper : this._onEventsWrapper;
-    this.onDeleteWrapper = (typeof options.onDeleteWrapper === 'function') ? options.onDeleteWrapper : this._onEventsWrapper;
-    this.onEventWrapper  = (typeof options.onEventWrapper === 'function')  ? options.onEventWrapper : this._onEventsWrapper;
-
-    EventEmitter.call(this);
+    this.onInsertWrapper = (typeof cfg.onInsertWrapper === 'function') ? cfg.onInsertWrapper : this._onEventsWrapper;
+    this.onUpdateWrapper = (typeof cfg.onUpdateWrapper === 'function') ? cfg.onUpdateWrapper : this._onEventsWrapper;
+    this.onDeleteWrapper = (typeof cfg.onDeleteWrapper === 'function') ? cfg.onDeleteWrapper : this._onEventsWrapper;
+    this.onEventWrapper  = (typeof cfg.onEventWrapper === 'function')  ? cfg.onEventWrapper : this._onEventsWrapper;
 }
 
 // This line must appear before anything is added to the Mongo prototype

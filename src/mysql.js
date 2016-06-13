@@ -1,9 +1,9 @@
-var EventEmitter = require('events').EventEmitter,
-    ZongJi = require('zongji');
+'use strict';
+
+const EventEmitter = require('events').EventEmitter;
+const ZongJi = require('zongji');
 
 function MySql(cfg) {
-    'use strict';
-
     var self = this;
 
     this.zongji = new ZongJi({
