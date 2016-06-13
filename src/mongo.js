@@ -150,6 +150,8 @@ Mongo.prototype.start = function(cb) {
         }
 
         if (self.onEvent) {
+            event.type = 'insert';
+
             if (self.onEventWrapper) {
                 self.onEventWrapper(function() {
                     self.onEvent(event, doc);
@@ -159,6 +161,8 @@ Mongo.prototype.start = function(cb) {
             }
         }
 
+       delete event.type;
+
         self.emitInsert && self.emit('insert', event);
 
         if (self.emitEvent) {
@@ -166,6 +170,19 @@ Mongo.prototype.start = function(cb) {
             self.emit('event', event);
         }
     });
+
+    /* Update operator reference
+         $inc	      Increments the value of the field by the specified amount.
+         $mul	      Multiplies the value of the field by the specified amount.
+         $rename	  Renames a field.
+         $setOnInsert Sets the value of a field if an update results in an insert of a document. Has no effect on
+                      update operations that modify existing documents.
+         $set	      Sets the value of a field in a document.
+         $unset	      Removes the specified field from a document.
+         $min	      Only updates the field if the specified value is less than the existing field value.
+         $max	      Only updates the field if the specified value is greater than the existing field value.
+         $currentDate Sets the value of a field to current date, either as a Date or a Timestamp.
+    */
 
     oplog.on('update', function (doc) {
         var o = doc.o,
@@ -175,7 +192,7 @@ Mongo.prototype.start = function(cb) {
         var event = {
             pk: o._id || o2._id,
             ns: ns,
-            item: o
+            item: o2 || o
         };
 
         if (self.onUpdate) {
@@ -189,6 +206,8 @@ Mongo.prototype.start = function(cb) {
         }
 
         if (self.onEvent) {
+            event.type = 'update';
+
             if (self.onEventWrapper) {
                 self.onEventWrapper(function() {
                     self.onEvent(event, doc);
@@ -197,6 +216,8 @@ Mongo.prototype.start = function(cb) {
                 self.onEvent(event, doc);
             }
         }
+
+        delete event.type;
 
         self.emitUpdate && self.emit('update', event);
 
@@ -227,6 +248,8 @@ Mongo.prototype.start = function(cb) {
         }
 
         if (self.onEvent) {
+            event.type = 'delete';
+
             if (self.onEventWrapper) {
                 self.onEventWrapper(function() {
                     self.onEvent(event, doc);
@@ -235,6 +258,8 @@ Mongo.prototype.start = function(cb) {
                 self.onEvent(event, doc);
             }
         }
+
+        delete event.type;
 
         self.emitDelete && self.emit('delete', event);
 
@@ -245,7 +270,14 @@ Mongo.prototype.start = function(cb) {
     });
 
     if (typeof cb === 'function') {
-        oplog.tail(cb);
+        oplog.tail(function(err, conn) {
+            if (err) {
+                throw err;
+            }
+
+            self.conn = conn;
+            cb && cb(err, conn);
+        });
     } else {
         oplog.tail();
     }
