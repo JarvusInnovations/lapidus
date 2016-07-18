@@ -1,21 +1,18 @@
 SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots;
 
--- ********************************************************
--- The following bits are needed when run outside of Travis
--- ********************************************************
--- DROP DATABASE IF EXISTS jacob;
--- DROP DATABASE IF EXISTS sawyer;
+DROP DATABASE IF EXISTS hurley;
+DROP DATABASE IF EXISTS lapidus;
 
--- DROP ROLE IF EXISTS jacob;
--- DROP ROLE IF EXISTS sawyer;
+DROP ROLE IF EXISTS lapidus;
+DROP ROLE IF EXISTS hurley;
 
--- CREATE ROLE jacob LOGIN PASSWORD '2PQM9aiKMJX5chv76gYdFJNi';
--- CREATE ROLE sawyer LOGIN PASSWORD '2PQM9aiKMJX5chv76gYdFJNi';
+CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
+CREATE DATABASE lapidus OWNER lapidus;
 
--- CREATE DATABASE jacob OWNER jacob;
--- CREATE DATABASE sawyer OWNER sawyer;
+CREATE ROLE hurley PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
+CREATE DATABASE hurley OWNER hurley;
 
-\c jacob;
+\c lapidus;
 
 CREATE TYPE sex AS ENUM ('M', 'F');
 
@@ -28,7 +25,7 @@ CREATE TABLE "test_table" (
   "nullable" varchar(300) DEFAULT NULL
 );
  
-\c sawyer;
+\c hurley;
 
 CREATE TYPE sex AS ENUM ('M', 'F');
 
