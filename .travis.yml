@@ -32,7 +32,8 @@ before_install:
   - sudo apt-get update -y
 
 install:
-  - sudo apt-get install -y postgresql-common postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PGVERSION python-setuptools cargo-stable rust-stable
+  - sudo apt-get install -y postgresql-common postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PGVERSION python-setuptools rust-stable
+  - sudo curl -sSf https://static.rust-lang.org/rustup.sh | sh
   - sudo easy_install pgxnclient
 
 before_script:
