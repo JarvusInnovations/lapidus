@@ -35,6 +35,7 @@ install:
   - sudo apt-get install -y postgresql-common postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PGVERSION python-setuptools rust-stable
   - sudo curl -sSf https://static.rust-lang.org/rustup.sh | sh
   - sudo easy_install pgxnclient
+  - sudo pgxn install jsoncdc --unstable
 
 before_script:
   - sudo bash -c "cat test/config/bin-log.cnf >> /etc/mysql/conf.d/bin-log.cnf"
