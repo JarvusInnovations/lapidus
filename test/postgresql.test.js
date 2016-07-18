@@ -50,36 +50,17 @@ describe('PostgreSQL', function () {
             };
         });
 
-        it('with all publicly documented properties accessible', function () {
-            var expectedProperties = [
-                'onInsert',
-                'onUpdate',
-                'onDelete',
-                'onEvent',
-
-                'onEventsWrapper',
-                'onEventWrapper',
-                'onInsertWrapper',
-                'onUpdateWrapper',
-                'onDeleteWrapper',
-
-                'emitEvents',
-                'emitDelete',
-                'emitInsert',
-                'emitUpdate'
-            ];
-
-            expectedProperties.forEach(function (prop) {
-                assert.notEqual(postgresql[prop], undefined, prop + ' should be exposed.');
-            });
-        });
-
         it('with meta properties that cascade properly to their children', function () {
             postgresql.onEventsWrapper = eventsWrapper;
             assert.equal(postgresql.onEventWrapper, eventsWrapper);
             assert.equal(postgresql.onInsertWrapper, eventsWrapper);
             assert.equal(postgresql.onUpdateWrapper, eventsWrapper);
             assert.equal(postgresql.onDeleteWrapper, eventsWrapper);
+            assert.equal(postgresql.onSchemaWrapper, eventsWrapper);
+            assert.equal(postgresql.onTransactionWrapper, eventsWrapper);
+            assert.equal(postgresql.onBeginTransactionWrapper, eventsWrapper);
+            assert.equal(postgresql.onCommitTransactionWrapper, eventsWrapper);
+
         });
 
         it('with meta properties that will only cascade valid values', function () {
@@ -88,6 +69,10 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.onInsertWrapper, false);
             assert.equal(postgresql.onUpdateWrapper, false);
             assert.equal(postgresql.onDeleteWrapper, false);
+            assert.equal(postgresql.onSchemaWrapper, false);
+            assert.equal(postgresql.onTransactionWrapper, false);
+            assert.equal(postgresql.onBeginTransactionWrapper, false);
+            assert.equal(postgresql.onCommitTransactionWrapper, false);
         });
 
         it('with meta properties that will not overwrite custom values with meta values', function () {
@@ -106,7 +91,44 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.onEventWrapper, emptyFunc);
             assert.equal(postgresql.onInsertWrapper, otherFunc, 'custom value should not be overridden by meta value');
             assert.equal(postgresql.onUpdateWrapper, emptyFunc);
-            assert.equal(postgresql.onDeleteWrapper, emptyFunc);
+            assert.equal(postgresql.onSchemaWrapper, emptyFunc);
+            assert.equal(postgresql.onTransactionWrapper, emptyFunc);
+            assert.equal(postgresql.onBeginTransactionWrapper, emptyFunc);
+            assert.equal(postgresql.onCommitTransactionWrapper, emptyFunc);
+        });
+
+        it('with all publicly documented properties accessible', function () {
+            var expectedProperties = [
+                'onInsert',
+                'onUpdate',
+                'onDelete',
+                'onEvent',
+                'onTransaction',
+                'onBeginTransaction',
+                'onCommitTransaction',
+
+                'onEventsWrapper',
+                'onEventWrapper',
+                'onInsertWrapper',
+                'onUpdateWrapper',
+                'onDeleteWrapper',
+                'onSchemaWrapper',
+                'onTransactionWrapper',
+                'onBeginTransactionWrapper',
+                'onCommitTransactionWrapper',
+
+                'emitEvents',
+                'emitDelete',
+                'emitInsert',
+                'emitUpdate',
+                'emitTransaction',
+                'emitBeginTransaction',
+                'emitCommitTransaction'
+            ];
+
+            expectedProperties.forEach(function (prop) {
+                assert.notEqual(postgresql[prop], undefined, prop + ' should be exposed.');
+            });
         });
 
         it('setting emitEvents cascades', function () {
@@ -115,12 +137,19 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.emitUpdate, true);
             assert.equal(postgresql.emitInsert, true);
             assert.equal(postgresql.emitDelete, true);
+            assert.equal(postgresql.emitTransaction, true);
+            assert.equal(postgresql.emitBeginTransaction, true);
+            assert.equal(postgresql.emitCommitTransaction, true);
 
             postgresql.emitEvents = false;
             assert.equal(postgresql.emitEvent, false);
             assert.equal(postgresql.emitUpdate, false);
             assert.equal(postgresql.emitInsert, false);
             assert.equal(postgresql.emitDelete, false);
+            assert.equal(postgresql.emitSchema, false);
+            assert.equal(postgresql.emitTransaction, false);
+            assert.equal(postgresql.emitBeginTransaction, false);
+            assert.equal(postgresql.emitCommitTransaction, false);
         });
     });
 
