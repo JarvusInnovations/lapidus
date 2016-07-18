@@ -62,7 +62,6 @@ describe('PostgreSQL', function () {
     });
 
     it('node established a client connection to generate events using the pg library', function (done) {
-        config.database = 'jacob';
         client = new pg.Client(config);
 
         client.connect(function (err) {
