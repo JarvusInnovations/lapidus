@@ -66,12 +66,18 @@ function PostgresLogicalReceiver(options) {
     this.emitUpdate = (typeof options.emitUpdate === 'boolean') ? options.emitUpdate : this._emitEvents;
     this.emitDelete = (typeof options.emitDelete === 'boolean') ? options.emitDelete : this._emitEvents;
     this.emitSchema = (typeof options.emitSchema === 'boolean') ? options.emitSchema : this._emitEvents;
+    this.emitTransaction = (typeof options.emitTransaction === 'boolean') ? options.emitTransaction : this._emitTransaction;
+    this.emitBeginTransaction = (typeof options.emitBeginTransaction === 'boolean') ? options.emitBeginTransaction : this._emitBeginTransaction;
+    this.emitCommitTransaction = (typeof options.emitCommitTransaction === 'boolean') ? options.emitCommitTransaction : this._emitCommitTransaction;
     this.emitEvent =  (typeof options.emitEvent === 'boolean') ? options.emitEvent : this._emitEvents;
 
     this.onInsert = (typeof options.onInsert === 'function') ? options.onInsert : false;
     this.onUpdate = (typeof options.onUpdate === 'function') ? options.onUpdate : false;
     this.onDelete = (typeof options.onDelete === 'function') ? options.onDelete : false;
     this.onSchema = (typeof options.onSchema === 'function') ? options.onSchema : false;
+    this.onTransaction = (typeof options.onTransaction === 'function') ? options.onTransaction : false;
+    this.onBeginTransaction = (typeof options.onBeginTransaction === 'function') ? options.onBeginTransaction : false;
+    this.onCommitTransaction = (typeof options.onCommitTransaction === 'function') ? options.onCommitTransaction : false;
     this.onEvent =  (typeof options.onEvent === 'function') ? options.onEvent : false;
 
     Object.defineProperty(this, "_onEventsWrapper", {
@@ -85,6 +91,9 @@ function PostgresLogicalReceiver(options) {
     this.onUpdateWrapper = (typeof options.onUpdateWrapper === 'function') ? options.onUpdateWrapper : this._onEventsWrapper;
     this.onDeleteWrapper = (typeof options.onDeleteWrapper === 'function') ? options.onDeleteWrapper : this._onEventsWrapper;
     this.onSchemaWrapper = (typeof options.onSchemaWrapper === 'function') ? options.onSchemaWrapper : this._onEventsWrapper;
+    this.onTransactionWrapper = (typeof options.onTransactionWrapper === 'function') ? options.onTransactionWrapper : this._onTransactionWrapper;
+    this.onBeginTransactionWrapper = (typeof options.onBeginTransactionWrapper === 'function') ? options.onBeginTransactionWrapper : this._onBeginTransactionWrapper;
+    this.onCommitTransactionWrapper = (typeof options.onCommitTransactionWrapper === 'function') ? options.onCommitTransactionWrapper : this._onCommitTransactionWrapper;
     this.onEventWrapper  = (typeof options.onEventWrapper === 'function')  ? options.onEventWrapper : this._onEventsWrapper;
 
     this.excludeTables = options.excludeTables || null;
@@ -103,6 +112,9 @@ Object.defineProperty(PostgresLogicalReceiver.prototype, 'onEventsWrapper', {
         this.onDeleteWrapper = (this.onDeleteWrapper === this._onEventsWrapper) ? val : this.onDeleteWrapper;
         this.onUpdateWrapper = (this.onUpdateWrapper === this._onEventsWrapper) ? val : this.onUpdateWrapper;
         this.onSchemaWrapper = (this.onSchemaWrapper === this._onSchemaWrapper) ? val : this.onSchemaWrapper;
+        this.onTransactionWrapper = (this.onTransactionWrapper === this._onTransactionWrapper) ? val : this.onTransactionWrapper;
+        this.onBeginTransactionWrapper = (this.onBeginTransactionWrapper === this._onBeginTransactionWrapper) ? val : this.onBeginTransactionWrapper;
+        this.onCommitTransactionWrapper = (this.onCommitTransactionWrapper === this._onCommitTransactionWrapper) ? val : this._onCommitTransactionWrapper;
         this.onEventWrapper  = (this.onEventWrapper  === this._onEventsWrapper) ? val : this.onEventWrapper;
 
         this._onEventsWrapper = val;
@@ -119,6 +131,9 @@ Object.defineProperty(PostgresLogicalReceiver.prototype, 'emitEvents', {
         this.emitUpdate = val;
         this.emitDelete = val;
         this.emitSchema = val;
+        this.emitTransaction = val;
+        this.emitBeginTransaction = val;
+        this.emitCommitTransaction = val;
         this.emitEvent = val;
 
         this._emitEvents = val;
@@ -425,6 +440,16 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                             eventHandler = 'onSchema';
                             eventHandlerWrapper = 'onSchemaWrapper';
                             emitEvent = 'emitSchema';
+                        } else if (line.begin) {
+                            action = 'beginTransaction';
+                            eventHandler = 'onBeginTransaction';
+                            eventHandlerWrapper = 'onBeginTransactionWrapper';
+                            emitEvent = 'emitBeginTransaction';
+                        } else if (line.commit) {
+                            action = 'commitTransaction';
+                            eventHandler = 'onCommitTransaction';
+                            eventHandlerWrapper = 'onCommitTransactionWrapper';
+                            emitEvent = 'emitCommitTransaction';
                         } else {
                             console.error(new Error('jsoncdc sent an unknown event type: ' + line));
                             return;
