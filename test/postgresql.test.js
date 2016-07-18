@@ -2,10 +2,43 @@ var assert = require('assert'),
     PostgreSql = require('../src/postgresql.js'),
     spawnSync = require('child_process').spawnSync,
     fs = require('fs'),
-    path = require('path');
+    path = require('path'),
+    pg = require('pg');
 
 describe('PostgreSQL', function () {
-    var output;
+    var output,
+        config = require(path.join(__dirname, './config/postgresql-only.json')).backends[0],
+        publicProperties = [
+            'onInsert',
+            'onUpdate',
+            'onDelete',
+            'onEvent',
+            'onError',
+            'onTransaction',
+            'onBeginTransaction',
+            'onCommitTransaction',
+
+            'onEventsWrapper',
+            'onEventWrapper',
+            'onInsertWrapper',
+            'onUpdateWrapper',
+            'onDeleteWrapper',
+            'onSchemaWrapper',
+            'onTransactionWrapper',
+            'onBeginTransactionWrapper',
+            'onCommitTransactionWrapper',
+
+            'emitEvents',
+            'emitDelete',
+            'emitInsert',
+            'emitUpdate',
+            'emitError',
+            'emitSchema',
+            'emitBeginTransaction',
+            'emitCommitTransaction'
+        ],
+        postgresql,
+        client;
 
     before(function (done) {
         output = spawnSync('node', ['index.js', '-c', './test/config/postgresql-only.json'], {timeout: 1500});
@@ -17,13 +50,30 @@ describe('PostgreSQL', function () {
         assert.equal(output.stderr.toString(), '');
     });
 
+    before(function (done) {
+        this.timeout(5000);
+        output = spawnSync('psql', ['-f', './test/sql/postgresql_setup.sql'], {timeout: 5000});
+        done();
+    })
+
+    it('executed the setup script', function () {
+        assert.equal(output.status, 0);
+        assert.equal(output.stderr.toString(), '');    
+    });
+
+    it('node established a client connection to generate events using the pg library', function (done) {
+        config.database = 'jacob';
+        client = new pg.Client(config);
+
+        client.connect(function (err) {
+            done(err);
+        })
+    });
+
     describe('Can be used as a module', function () {
-        var postgresql,
-            eventsWrapper;
+        var eventsWrapper;
 
         before(function (done) {
-            var config = require(path.join(__dirname, './config/postgresql-only.json')).backends[0];
-
             // The slot will still be in use from the spawned process above
             config.slot = config.slot + '1';
 
@@ -151,9 +201,75 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.emitBeginTransaction, false);
             assert.equal(postgresql.emitCommitTransaction, false);
         });
+
+        it('allows all public properties to be nulled', function() {
+            publicProperties.forEach(function(prop) {
+                if (prop.indexOf('on') === 0) {
+                    postgresql[prop] = null;
+                } else {
+                    postgresql[prop] = true;
+                }
+            });
+        });
+
+        describe('to stream insert events', function() {
+            var txId;
+
+            beforeEach(function(done) {
+                var sql = `
+                    INSERT INTO test_table
+                                (first_name, last_name, sex, dob, nullable)
+                            VALUES ('Frank', 'Lapidus', 'M','1952-11-29T12:34:56.000Z', null) RETURNING *;
+                    `;
+
+                client.query(sql, function (err, result) {
+                    assert.ifError(err);
+                    done();
+                });
+            });
+
+            it('emits an "event" event', function(done) {
+                function handler(evt) {
+                    console.log('event event', evt);
+                    assert.equal(evt.type, 'beginTransaction');
+                    assert.equal(typeof evt.id, 'number');
+                    done();
+                }
+
+                postgresql.once('event', handler);
+            });
+
+            it('executes an onEvent handler', function(done) {
+                postgresql.onEvent = function (evt) {
+                    assert.equal(typeof evt.id, 'number');
+                    assert.equal(evt.type, 'beginTransaction');
+                    postgresql.onEvent = null;
+                    done();
+                };
+            });
+
+            it('emits an "insert" event', function(done) {
+                function handler(evt) {
+                    console.log('insert event', evt);
+                    assert.equal(evt.item.id, 3);
+                    done();
+                }
+
+                postgresql.once('insert', handler);
+            });
+
+            it('executes an onInsert handler', function(done) {
+                postgresql.onInsert = function (evt) {
+                    console.log('onInsert', evt);
+                    assert.equal(evt.item.id, 4);
+                    postgresql.onInsert = null;
+                    done();
+                };
+            });
+        });
     });
 
-    describe('decoding_json properly handles built-in PostgreSQL data types', function () {
+    describe('jsoncdc properly handles built-in PostgreSQL data types', function () {
 
         // These are extracted using a jQuery snippet from the official documentation:
         // https://gist.github.com/jmealo/d1ae63bc61976af80b50

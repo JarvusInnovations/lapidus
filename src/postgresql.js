@@ -382,6 +382,9 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
         pg_recvlogical.stdout.setEncoding('utf8');
         pg_recvlogical.stderr.setEncoding('utf8');
 
+        // TODO: Why is data being output on STDERR instead of STDOUT?
+
+        /*
         pg_recvlogical.stderr.on('data', function (data) {
             data.split('\n').forEach(function (line) {
                 var event = self.stdErrorToEvent(line);
@@ -390,7 +393,7 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                     self.emit(event.type, event.message);
                 }
             });
-        });
+        });*/
 
         pg_recvlogical.stdout.on('data', function (data) {
             data.split('\n').forEach(function (line) {
@@ -410,13 +413,15 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
 
                         // HACK: Filter out pg_temp tables (if you refresh a materialized view you'll get an INSERT
                         // for each row to a pg_temp_* table)
-                        if (tableName.substr(0, 8) === 'pg_temp_') {
-                            return;
-                        }
-
-                        if (self.excludeTables) {
-                            if (self.excludeTables.indexOf(tableName) !== -1) {
+                        if (tableName) {
+                            if (tableName.substr(0, 8) === 'pg_temp_') {
                                 return;
+                            }
+
+                            if (self.excludeTables) {
+                                if (self.excludeTables.indexOf(tableName) !== -1) {
+                                    return;
+                                }
                             }
                         }
 
@@ -445,24 +450,35 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                             eventHandler = 'onBeginTransaction';
                             eventHandlerWrapper = 'onBeginTransactionWrapper';
                             emitEvent = 'emitBeginTransaction';
+
+                            msg = {
+                                'id': line.begin
+                            };
                         } else if (line.commit) {
                             action = 'commitTransaction';
                             eventHandler = 'onCommitTransaction';
                             eventHandlerWrapper = 'onCommitTransactionWrapper';
                             emitEvent = 'emitCommitTransaction';
+
+                            msg = {
+                                'id': line.commit,
+                                'timestamp': new Date(line.t)
+                            };
                         } else {
                             console.error(new Error('jsoncdc sent an unknown event type: ' + line));
                             return;
                         }
 
-                        pk = line[action].id || line[action].ID;
+                        if (!msg) {
+                            pk = line[action].id || line[action].ID;
 
-                        msg = {
-                            table: tableName,
-                            pk: pk,
-                            schema: line.schema,
-                            item: (line[action] || pk)
-                        };
+                            msg = {
+                                table: tableName,
+                                pk: pk,
+                                schema: line.schema,
+                                item: (line[action] || pk)
+                            };
+                        }
 
                         if (self[eventHandler]) {
                             if (self[eventHandlerWrapper]) {

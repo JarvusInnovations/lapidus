@@ -4,9 +4,13 @@
       "type": "postgresql",
       "host": "127.0.0.1",
       "user": "lapidus",
-      "database": "lapidus",
+      "database": "jacob",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
-      "slot": "lapidus_slot"
+      "slot": "lapidus_slot",
+      "emitEvents": true,
+      "plugins": {
+        "debug": {}
+      }
     },
 
     {
@@ -15,7 +19,11 @@
       "user": "hurley",
       "database": "hurley",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
-      "slot": "hurley_slot"
+      "slot": "hurley_slot",
+      "emitEvents": true,
+        "plugins": {
+        "debug": {}
+      }
     }
   ]
 }

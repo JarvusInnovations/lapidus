@@ -30,9 +30,10 @@
     "test-travis": "istanbul cover _mocha -- -R spec ./test/*"
   },
   "devDependencies": {
-    "mocha": "^2.3.2",
+    "coveralls": "^2.11.4",
     "istanbul": "^0.3.20",
-    "coveralls": "^2.11.4"
+    "mocha": "^2.3.2",
+    "pg": "^6.0.2"
   },
   "dependencies": {
     "async": "^1.5.2",
