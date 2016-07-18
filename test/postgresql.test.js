@@ -53,6 +53,7 @@ describe('PostgreSQL', function () {
     before(function (done) {
         this.timeout(5000);
         output = spawnSync('psql', ['-f', './test/sql/postgresql_setup.sql'], {timeout: 5000});
+        console.log(output);
         done();
     })
 

@@ -16,7 +16,7 @@ CREATE DATABASE hurley OWNER hurley;
 
 CREATE TYPE sex AS ENUM ('M', 'F');
 
-CREATE TABLE "test_table" (
+CREATE TABLE IF NOT EXISTS "test_table" (
   "id" serial NOT NULL PRIMARY KEY,
   "first_name" varchar(100) NOT NULL,
   "last_name" varchar(200) NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE "test_table" (
 
 CREATE TYPE sex AS ENUM ('M', 'F');
 
-CREATE TABLE "test_table" (
+CREATE TABLE IF NOT EXISTS "test_table" (
   "id" serial NOT NULL PRIMARY KEY,
   "first_name" varchar(100) NOT NULL,
   "last_name" varchar(200) NOT NULL,
