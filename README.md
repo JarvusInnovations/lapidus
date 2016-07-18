@@ -19,25 +19,22 @@ npm install -g lapidus
 
 ## PostgreSQL
 You'll need PostgreSQL 9.4 or higher with logical replication configured and the
-[decoding_json](https://github.com/leptonix/decoding-json) plugin installed and loaded. Forks of PostgreSQL should be
-compatible provided they ship with pg_recvlogical.
+[JSONCDC](https://github.com/posix4e/jsoncdc) plugin installed and loaded. Any PostgreSQL fork that ships with
+`pg_recvlogical` *should* be compatible.
 
-**To install the decoding_json logical decoding plugin on Ubuntu:**
+**To install the [JSONCDC](https://github.com/posix4e/jsoncdc) logical decoding plugin using pgxn:**
 ```shell
-# Ubuntu / Debian
-git clone https://github.com/leptonix/decoding-json.git
-cd decoding-json
-sudo apt-get install postgresql-server-dev-9.5
-make
-sudo cp decoding_json.so /usr/lib/postgresql/9.5/lib/
+sudo easy_install pgxnclient
+pgxn install jsoncdc --unstable
 ```
 
-**To enable logical decoding and the decoding_json plugin add the following lines to your postgresql.conf:**
+**To enable logical decoding and the JSONCDC plugin add the following lines to your postgresql.conf:**
 ```
 wal_level = logical
 max_wal_senders = 10
 max_replication_slots = 10
-shared_preload_libraries = 'decoding_json'
+
+shared_preload_libraries = 'jsoncdc'
 ```
 
 **Create a user with replication privileges and add them to your pg_hba.conf file.**

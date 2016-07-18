@@ -19,7 +19,7 @@ function PostgresLogicalReceiver(options) {
             env: {},
             populateEnv: true,
             timeout: 10000,
-            decodingPlugin: 'decoding_json',
+            decodingPlugin: 'jsoncdc',
             slot: null,
             debug: false,
             linePrefix: null,
@@ -65,11 +65,13 @@ function PostgresLogicalReceiver(options) {
     this.emitInsert = (typeof options.emitInsert === 'boolean') ? options.emitInsert : this._emitEvents;
     this.emitUpdate = (typeof options.emitUpdate === 'boolean') ? options.emitUpdate : this._emitEvents;
     this.emitDelete = (typeof options.emitDelete === 'boolean') ? options.emitDelete : this._emitEvents;
+    this.emitSchema = (typeof options.emitSchema === 'boolean') ? options.emitSchema : this._emitEvents;
     this.emitEvent =  (typeof options.emitEvent === 'boolean') ? options.emitEvent : this._emitEvents;
 
     this.onInsert = (typeof options.onInsert === 'function') ? options.onInsert : false;
     this.onUpdate = (typeof options.onUpdate === 'function') ? options.onUpdate : false;
     this.onDelete = (typeof options.onDelete === 'function') ? options.onDelete : false;
+    this.onSchema = (typeof options.onSchema === 'function') ? options.onSchema : false;
     this.onEvent =  (typeof options.onEvent === 'function') ? options.onEvent : false;
 
     Object.defineProperty(this, "_onEventsWrapper", {
@@ -82,6 +84,7 @@ function PostgresLogicalReceiver(options) {
     this.onInsertWrapper = (typeof options.onInsertWrapper === 'function') ? options.onInsertWrapper : this._onEventsWrapper;
     this.onUpdateWrapper = (typeof options.onUpdateWrapper === 'function') ? options.onUpdateWrapper : this._onEventsWrapper;
     this.onDeleteWrapper = (typeof options.onDeleteWrapper === 'function') ? options.onDeleteWrapper : this._onEventsWrapper;
+    this.onSchemaWrapper = (typeof options.onSchemaWrapper === 'function') ? options.onSchemaWrapper : this._onEventsWrapper;
     this.onEventWrapper  = (typeof options.onEventWrapper === 'function')  ? options.onEventWrapper : this._onEventsWrapper;
 
     this.excludeTables = options.excludeTables || null;
@@ -99,6 +102,7 @@ Object.defineProperty(PostgresLogicalReceiver.prototype, 'onEventsWrapper', {
         this.onInsertWrapper = (this.onInsertWrapper === this._onEventsWrapper) ? val : this.onInsertWrapper;
         this.onDeleteWrapper = (this.onDeleteWrapper === this._onEventsWrapper) ? val : this.onDeleteWrapper;
         this.onUpdateWrapper = (this.onUpdateWrapper === this._onEventsWrapper) ? val : this.onUpdateWrapper;
+        this.onSchemaWrapper = (this.onSchemaWrapper === this._onSchemaWrapper) ? val : this.onSchemaWrapper;
         this.onEventWrapper  = (this.onEventWrapper  === this._onEventsWrapper) ? val : this.onEventWrapper;
 
         this._onEventsWrapper = val;
@@ -114,6 +118,7 @@ Object.defineProperty(PostgresLogicalReceiver.prototype, 'emitEvents', {
         this.emitInsert = val;
         this.emitUpdate = val;
         this.emitDelete = val;
+        this.emitSchema = val;
         this.emitEvent = val;
 
         this._emitEvents = val;
@@ -256,7 +261,7 @@ PostgresLogicalReceiver.prototype.createSlot = function createSlot(slot, callbac
         '--slot=' + slot,
         '--create-slot',
         '--plugin=' + this.decodingPlugin,
-        '--dbname=' + this.database,
+        '--dbname=' + this.database
     ], {
         env: this.env,
         timeout: this.timeout
@@ -288,7 +293,7 @@ PostgresLogicalReceiver.prototype.dropSlot = function dropSlot(slot, callback) {
     execFile(this.binPath + '/pg_recvlogical', [
         '--slot=' + slot,
         '--drop-slot',
-        '--dbname=' + this.database,
+        '--dbname=' + this.database
     ], {
         env: this.env,
         timeout: this.timeout
@@ -344,13 +349,12 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
             return callback(err);
         }
 
-
         self.spawn = pg_recvlogical = spawn(self.binPath + '/pg_recvlogical', [
             '--slot=' + slot,
             '--plugin=' + self.decodingPlugin,
             '--dbname=' + self.database,
             '--start',
-            '-f-',
+            '-f-'
         ], {env: self.env, detached: false});
 
         process.on('exit', function() {
@@ -387,87 +391,81 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                 if (line.charAt(0) === '{') {
                     try {
                         line = JSON.parse(line);
+                        tableName = line.table;
 
-                        type = line.type;
+                        // HACK: Filter out pg_temp tables (if you refresh a materialized view you'll get an INSERT
+                        // for each row to a pg_temp_* table)
+                        if (tableName.substr(0, 8) === 'pg_temp_') {
+                            return;
+                        }
 
-                        if (type === 'table') {
-                            tableName = line.name;
-
-                            // HACK: Filter out pg_temp tables (if you refresh a materialized view you'll get an INSERT
-                            // for each row to a pg_temp_xxxxxxx table)
-                            if (tableName.substr(0, 8) === 'pg_temp_') {
+                        if (self.excludeTables) {
+                            if (self.excludeTables.indexOf(tableName) !== -1) {
                                 return;
                             }
+                        }
 
-                            if (self.excludeTables) {
-                                if (self.excludeTables.indexOf(tableName) !== -1) {
-                                    return;
-                                }
-                            }
+                        if (line.insert) {
+                            action = 'insert';
+                            eventHandler = 'onInsert';
+                            eventHandlerWrapper = 'onInsertWrapper';
+                            emitEvent = 'emitInsert';
+                        } else if (line.update) {
+                            action = 'update';
+                            eventHandler = 'onUpdate';
+                            eventHandlerWrapper = 'onUpdateWrapper';
+                            emitEvent = 'emitUpdate';
+                        } else if (line.delete) {
+                            action = 'delete';
+                            eventHandler = 'onDelete';
+                            eventHandlerWrapper = 'onDeleteWrapper';
+                            emitEvent = 'emitDelete';
+                        } else if (line.schema) {
+                            action = 'schema';
+                            eventHandler = 'onSchema';
+                            eventHandlerWrapper = 'onSchemaWrapper';
+                            emitEvent = 'emitSchema';
+                        } else {
+                            console.error(new Error('jsoncdc sent an unknown event type: ' + line));
+                            return;
+                        }
 
-                            // SPEED HACK: Avoid concatenation, toLowerCase and Object lookup (6-8x boost)
-                            if (line.change == 'INSERT') {
-                                action = 'insert';
-                                eventHandler = 'onInsert';
-                                eventHandlerWrapper = 'onInsertWrapper';
-                                emitEvent = 'emitInsert';
-                            } else if (line.change == 'UPDATE') {
-                                action = 'update';
-                                eventHandler = 'onUpdate';
-                                eventHandlerWrapper = 'onUpdateWrapper';
-                                emitEvent = 'emitUpdate';
-                            } else if (line.change == 'DELETE') {
-                                action = 'delete';
-                                eventHandler = 'onDelete';
-                                eventHandlerWrapper = 'onDeleteWrapper';
-                                emitEvent = 'emitDelete';
-                            } else {
-                                // The only value here would be FIX ME, which only happens if there's an error during
-                                // logical encoding. We'll need to establish a way to provide to deal with this
-                                // perhaps a pressure valve can be used to change from a warning to fatal
-                                console.error(new Error('decoding_json failed to logically decode a line: ' + line));
-                                return;
-                            }
+                        pk = line[action].id || line[action].ID;
 
-                            // TODO: decoding_json doesn't seem to send the keys on INSERT, only on UPDATE / DELETE
-                            // Compound keys come back as JSON objects
-                            pk = line.key || line.data.id || line.data.ID;
+                        msg = {
+                            table: tableName,
+                            pk: pk,
+                            schema: line.schema,
+                            item: (line[action] || pk)
+                        };
 
-                            msg = {
-                                table: tableName,
-                                pk: pk,
-                                schema: line.schema,
-                                item: (line.data || pk)
-                            };
-
-                            if (self[eventHandler]) {
-                                if (self[eventHandlerWrapper]) {
-                                    self[eventHandlerWrapper](function() {
-                                        self[eventHandler](msg, line);
-                                    });
-                                } else {
+                        if (self[eventHandler]) {
+                            if (self[eventHandlerWrapper]) {
+                                self[eventHandlerWrapper](function () {
                                     self[eventHandler](msg, line);
-                                }
+                                });
+                            } else {
+                                self[eventHandler](msg, line);
                             }
+                        }
 
-                            self[emitEvent] && self.emit(action, msg);
+                        self[emitEvent] && self.emit(action, msg);
 
-                            if (self.onEvent) {
-                                msg.type = action;
+                        if (self.onEvent) {
+                            msg.type = action;
 
-                                if (self.onEventWrapper) {
-                                    self.onEventWrapper(function() {
-                                        self.onEvent(msg, line);
-                                    });
-                                } else {
+                            if (self.onEventWrapper) {
+                                self.onEventWrapper(function () {
                                     self.onEvent(msg, line);
-                                }
+                                });
+                            } else {
+                                self.onEvent(msg, line);
                             }
+                        }
 
-                            if (self.emitEvent) {
-                                msg.type = action;
-                                self.emit('event', msg);
-                            }
+                        if (self.emitEvent) {
+                            msg.type = action;
+                            self.emit('event', msg);
                         }
                     } catch (e) {
                         self.emit('error', e + line);
