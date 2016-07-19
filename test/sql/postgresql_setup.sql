@@ -1,3 +1,5 @@
+\set ON_ERROR_STOP true
+
 SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots;
 
 DROP DATABASE IF EXISTS hurley;
