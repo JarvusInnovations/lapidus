@@ -6,11 +6,7 @@
       "user": "lapidus",
       "database": "lapidus",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
-      "slot": "lapidus_slot",
-      "emitEvents": true,
-      "plugins": {
-        "debug": {}
-      }
+      "slot": "lapidus_slot"
     },
 
     {
@@ -19,11 +15,7 @@
       "user": "hurley",
       "database": "hurley",
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
-      "slot": "hurley_slot",
-      "emitEvents": true,
-        "plugins": {
-        "debug": {}
-      }
+      "slot": "hurley_slot"
     }
   ]
 }
