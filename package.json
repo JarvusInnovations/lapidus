@@ -39,6 +39,7 @@
     "async": "^1.5.2",
     "errno": "^0.1.4",
     "jsonlint": "^1.6.2",
+    "ldjson-stream": "^1.2.1",
     "mongodb": "^2.1.18",
     "yargs": "^3.32.0"
   },

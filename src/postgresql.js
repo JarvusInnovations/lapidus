@@ -9,6 +9,7 @@ const execFile = require('child_process').execFile;
 const spawn = require('child_process').spawn;
 const async = require('async');
 const assert = require('assert');
+const ldj = require('ldjson-stream')
 
 function DatabaseTransaction(txId) {
     this.txId = txId;
@@ -360,6 +361,183 @@ PostgresLogicalReceiver.prototype.stop = function stop(callback) {
     }
 };
 
+PostgresLogicalReceiver.prototype.lineHandler = function lineHandler (line) {
+    var tableName,
+        action,
+        pk,
+        msg,
+        type,
+        eventHandler,
+        eventHandlerWrapper,
+        emitEvent,
+        transactionEvent,
+        tableName = line.table,
+        self = this;
+
+    // HACK: Filter out pg_temp tables (if you refresh a materialized view you'll get an INSERT
+    // for each row to a pg_temp_* table)
+    if (tableName) {
+        if (tableName.indexOf('pg_temp_') !== -1) {
+            return;
+        }
+
+        if (self.excludeTables) {
+            if (self.excludeTables.indexOf(tableName) !== -1) {
+                return;
+            }
+        }
+    }
+
+    if (line.insert) {
+        action = 'insert';
+        eventHandler = 'onInsert';
+        eventHandlerWrapper = 'onInsertWrapper';
+        emitEvent = 'emitInsert';
+    } else if (line.update) {
+        action = 'update';
+        eventHandler = 'onUpdate';
+        eventHandlerWrapper = 'onUpdateWrapper';
+        emitEvent = 'emitUpdate';
+    } else if (line.delete) {
+        action = 'delete';
+        eventHandler = 'onDelete';
+        eventHandlerWrapper = 'onDeleteWrapper';
+        emitEvent = 'emitDelete';
+
+        msg = {
+            table: tableName,
+            schema: self.schemaCache[tableName],
+            item: line['@'],
+            txId: self.currentTxId,
+        };
+
+        if (typeof line['@'] === 'object') {
+            msg.pk = line['@'][Object.keys(line['@']).filter(key => line['@'][key] !== null).shift()] || null;
+        }
+
+        if (self.emitTransaction) {
+            self.currentTx.push(msg);
+        }
+    } else if (line.schema) {
+        action = 'schema';
+        eventHandler = 'onSchema';
+        eventHandlerWrapper = 'onSchemaWrapper';
+        emitEvent = 'emitSchema';
+
+        self.schemaCache[tableName] = line.schema;
+    } else if (line.begin) {
+        action = 'beginTransaction';
+        eventHandler = 'onBeginTransaction';
+        eventHandlerWrapper = 'onBeginTransactionWrapper';
+        emitEvent = 'emitBeginTransaction';
+
+        msg = {
+            'id': line.begin
+        };
+
+        if (self.emitTransaction) {
+            self.currentTxId = line.begin;
+            self.currentTx = new DatabaseTransaction(self.currentTxId);
+        }
+    } else if (line.commit) {
+        action = 'commitTransaction';
+        eventHandler = 'onCommitTransaction';
+        eventHandlerWrapper = 'onCommitTransactionWrapper';
+        emitEvent = 'emitCommitTransaction';
+
+        msg = {
+            'id': line.commit,
+            'timestamp': new Date(line.t)
+        };
+
+        if (self.emitTransaction) {
+            assert.equal(self.currentTxId, line.commit, 'Mismatched currentTxId');
+            transactionEvent = self.currentTx.commit(msg.timestamp);
+        }
+    } else {
+        console.error(new Error('jsoncdc sent an unknown event type: ' + line));
+        return;
+    }
+
+    if (!msg) {
+        pk = line[action].id || line[action].ID;
+
+        msg = {
+            table: tableName,
+            pk: pk,
+            schema: self.schemaCache[tableName],
+            item: (line[action] || pk),
+            txId: self.currentTxId
+        };
+
+        if (self.emitTransaction) {
+            self.currentTx.push(msg);
+        }
+    }
+
+    if (transactionEvent) {
+        if (self.emitTransaction) {
+            self.emit('transaction', transactionEvent);    
+        }
+
+        if (self.onTransaction) {
+            if (self.onTransactionWrapper) {
+                self.onTransactionWrapper(function () {
+                    self.onTransaction(transactionEvent, transactionEvent);
+                });            
+            } else {
+                self.onTransaction(transactionEvent, transactionEvent);    
+            }
+        }
+    }
+
+    if (self[eventHandler]) {
+        if (self[eventHandlerWrapper]) {
+            self[eventHandlerWrapper](function () {
+                self[eventHandler](msg, line);
+            });
+        } else {
+            self[eventHandler](msg, line);
+        }
+    }
+
+    self[emitEvent] && self.emit(action, msg);
+
+    if (self.onEvent) {
+        msg.type = action;
+
+        if (transactionEvent) {
+            transactionEvent.type = 'transaction';
+
+            if (self.onEventWrapper) {
+                self.onEventWrapper(function () {
+                    self.onEvent(transactionEvent, line);
+                });
+            } else {
+                self.onEvent(transactionEvent, transactionEvent);
+            }
+        }
+
+        if (self.onEventWrapper) {
+            self.onEventWrapper(function () {
+                self.onEvent(msg, line);
+            });
+        } else {
+            self.onEvent(msg, line);
+        }
+    }
+
+    if (self.emitEvent) {
+        msg.type = action;
+        self.emit('event', msg);
+
+        if (transactionEvent) {
+            transactionEvent.type = 'transaction';
+            self.emit('event', transactionEvent);
+        }
+    }
+};
+
 PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
     var pg_recvlogical,
         self = this;
@@ -417,192 +595,10 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
             });
         });*/
 
-        pg_recvlogical.stdout.on('data', function (data) {
-            data.split('\n').forEach(function (line) {
-                var tableName,
-                    action,
-                    pk,
-                    msg,
-                    type,
-                    eventHandler,
-                    eventHandlerWrapper,
-                    emitEvent,
-                    transactionEvent;
-
-                if (line.charAt(0) === '{') {
-                    try {
-                        line = JSON.parse(line);
-                        tableName = line.table;
-
-                        // HACK: Filter out pg_temp tables (if you refresh a materialized view you'll get an INSERT
-                        // for each row to a pg_temp_* table)
-                        if (tableName) {
-                            if (tableName.substr(0, 8) === 'pg_temp_') {
-                                return;
-                            }
-
-                            if (self.excludeTables) {
-                                if (self.excludeTables.indexOf(tableName) !== -1) {
-                                    return;
-                                }
-                            }
-                        }
-
-                        if (line.insert) {
-                            action = 'insert';
-                            eventHandler = 'onInsert';
-                            eventHandlerWrapper = 'onInsertWrapper';
-                            emitEvent = 'emitInsert';
-                        } else if (line.update) {
-                            action = 'update';
-                            eventHandler = 'onUpdate';
-                            eventHandlerWrapper = 'onUpdateWrapper';
-                            emitEvent = 'emitUpdate';
-                        } else if (line.delete) {
-                            action = 'delete';
-                            eventHandler = 'onDelete';
-                            eventHandlerWrapper = 'onDeleteWrapper';
-                            emitEvent = 'emitDelete';
-
-                            msg = {
-                                table: tableName,
-                                schema: self.schemaCache[tableName],
-                                item: line['@'],
-                                txId: self.currentTxId,
-                            };
-
-                            if (typeof line['@'] === 'object') {
-                                msg.pk = line['@'][Object.keys(line['@']).filter(key => line['@'][key] !== null).shift()] || null;
-                            }
-
-                            if (self.emitTransaction) {
-                                self.currentTx.push(msg);
-                            }
-                        } else if (line.schema) {
-                            action = 'schema';
-                            eventHandler = 'onSchema';
-                            eventHandlerWrapper = 'onSchemaWrapper';
-                            emitEvent = 'emitSchema';
-
-                            self.schemaCache[tableName] = line.schema;
-                        } else if (line.begin) {
-                            action = 'beginTransaction';
-                            eventHandler = 'onBeginTransaction';
-                            eventHandlerWrapper = 'onBeginTransactionWrapper';
-                            emitEvent = 'emitBeginTransaction';
-
-                            msg = {
-                                'id': line.begin
-                            };
-
-                            if (self.emitTransaction) {
-                                self.currentTxId = line.begin;
-                                self.currentTx = new DatabaseTransaction(self.currentTxId);
-                            }
-                        } else if (line.commit) {
-                            action = 'commitTransaction';
-                            eventHandler = 'onCommitTransaction';
-                            eventHandlerWrapper = 'onCommitTransactionWrapper';
-                            emitEvent = 'emitCommitTransaction';
-
-                            msg = {
-                                'id': line.commit,
-                                'timestamp': new Date(line.t)
-                            };
-
-                            if (self.emitTransaction) {
-                                assert.equal(self.currentTxId, line.commit, 'Mismatched currentTxId');
-                                transactionEvent = self.currentTx.commit(msg.timestamp);
-                            }
-                        } else {
-                            console.error(new Error('jsoncdc sent an unknown event type: ' + line));
-                            return;
-                        }
-
-                        if (!msg) {
-                            pk = line[action].id || line[action].ID;
-
-                            msg = {
-                                table: tableName,
-                                pk: pk,
-                                schema: self.schemaCache[tableName],
-                                item: (line[action] || pk),
-                                txId: self.currentTxId
-                            };
-
-                            if (self.emitTransaction) {
-                                self.currentTx.push(msg);
-                            }
-                        }
-
-                        if (transactionEvent) {
-                            if (self.emitTransaction) {
-                                self.emit('transaction', transactionEvent);    
-                            }
-
-                            if (self.onTransaction) {
-                                if (self.onTransactionWrapper) {
-                                    self.onTransactionWrapper(function () {
-                                        self.onTransaction(transactionEvent, transactionEvent);
-                                    });            
-                                } else {
-                                    self.onTransaction(transactionEvent, transactionEvent);    
-                                }
-                            }
-                        }
-
-                        if (self[eventHandler]) {
-                            if (self[eventHandlerWrapper]) {
-                                self[eventHandlerWrapper](function () {
-                                    self[eventHandler](msg, line);
-                                });
-                            } else {
-                                self[eventHandler](msg, line);
-                            }
-                        }
-
-                        self[emitEvent] && self.emit(action, msg);
-
-                        if (self.onEvent) {
-                            msg.type = action;
-
-                            if (transactionEvent) {
-                                transactionEvent.type = 'transaction';
-
-                                if (self.onEventWrapper) {
-                                    self.onEventWrapper(function () {
-                                        self.onEvent(transactionEvent, line);
-                                    });
-                                } else {
-                                    self.onEvent(transactionEvent, transactionEvent);
-                                }
-                            }
-
-                            if (self.onEventWrapper) {
-                                self.onEventWrapper(function () {
-                                    self.onEvent(msg, line);
-                                });
-                            } else {
-                                self.onEvent(msg, line);
-                            }
-                        }
-
-                        if (self.emitEvent) {
-                            msg.type = action;
-                            self.emit('event', msg);
-
-                            if (transactionEvent) {
-                                transactionEvent.type = 'transaction';
-                                self.emit('event', transactionEvent);
-                            }
-                        }
-                    } catch (e) {
-                        self.emit('error', e + line);
-                        self.debug && console.error('PostgreSQL: ' + e);
-                        self.debug && console.error('PostgreSQL: ' + line);
-                    }
-                }
-            });
+        pg_recvlogical.stdout
+        .pipe(ldj.parse())
+        .on('data', function(line) {
+            self.lineHandler(line);
         });
 
         pg_recvlogical.on('close', function (code) {
