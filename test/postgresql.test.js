@@ -53,10 +53,10 @@ describe('PostgreSQL', function () {
     before(function (done) {
         this.timeout(5000);
         output = spawnSync('psql', ['-f', './test/sql/postgresql_setup.sql'], {timeout: 5000});
-        assert.equal(output.status, 0);
-        console.log(output.stdout.toString());
-        console.log(output.stderr.toString());
+        console.error(output.stdout.toString());
+        console.warn(output.stderr.toString());
         assert.equal(output.stderr.toString(), '');
+        assert.equal(output.status, 0);
         done();
     });
 
