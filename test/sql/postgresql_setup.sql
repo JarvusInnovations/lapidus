@@ -1,4 +1,5 @@
 \set ON_ERROR_STOP true
+SET client_min_messages TO WARNING;
 
 SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots;
 
