@@ -440,6 +440,16 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                             eventHandler = 'onDelete';
                             eventHandlerWrapper = 'onDeleteWrapper';
                             emitEvent = 'emitDelete';
+
+                            msg = {
+                                table: tableName,
+                                schema: line.schema,
+                                item: line['@']
+                            };
+
+                            if (typeof line['@'] === 'object') {
+                                msg.pk = line['@'][Object.keys(line['@']).filter(key => line['@'][key] !== null).shift()] || null;
+                            }
                         } else if (line.schema) {
                             action = 'schema';
                             eventHandler = 'onSchema';
@@ -590,7 +600,7 @@ PostgresLogicalReceiver.prototype.validateConfig = function validateConfig(confi
     // TODO: We don't validate this right now because the user may have their environment setup to provide Postgres
     // connection details through its various mechanisms. If this is not the case the canPsql function will fail
     // and useful errors are generated. It may be advisable to call canPsql to validate the configuration, however,
-    // a transient connection error doesn't equal a configuration errors, however, failed auth or a database that does
+    // a transient connection error doesn't equal a configuration error, however, failed auth or a database that does
     // not exist at launch likely can be classified as one.
 
     // TODO: Come up with a DRY pattern for configuration validation that can also work from the constructor when

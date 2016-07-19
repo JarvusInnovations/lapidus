@@ -226,7 +226,6 @@ describe('PostgreSQL', function () {
 
             it('emits an "event" event', function(done) {
                 function handler(evt) {
-                    console.log('event event', evt);
                     assert.equal(evt.type, 'beginTransaction');
                     assert.equal(typeof evt.id, 'number');
                     done();
@@ -246,7 +245,6 @@ describe('PostgreSQL', function () {
 
             it('emits an "insert" event', function(done) {
                 function handler(evt) {
-                    console.log('insert event', evt);
                     assert.equal(evt.item.id, 3);
                     done();
                 }
@@ -256,12 +254,111 @@ describe('PostgreSQL', function () {
 
             it('executes an onInsert handler', function(done) {
                 postgresql.onInsert = function (evt) {
-                    console.log('onInsert', evt);
                     assert.equal(evt.item.id, 4);
                     postgresql.onInsert = null;
                     done();
                 };
             });
+        });
+    });
+
+    describe('to stream update events', function() {
+        var id = 0;
+
+        beforeEach(function(done) {
+            var sql = `UPDATE test_table SET first_name = 'Rick', last_name = 'Sanchez' WHERE id = ${++id};`;
+
+            client.query(sql, function (err, result) {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('emits an "event" event', function(done) {
+            function handler(evt) {
+                assert.equal(evt.type, 'beginTransaction');
+                assert.equal(typeof evt.id, 'number');
+                done();
+            }
+
+            postgresql.once('event', handler);
+        });
+
+        it('executes an onEvent handler', function(done) {
+            postgresql.onEvent = function (evt) {
+                assert.equal(typeof evt.id, 'number');
+                assert.equal(evt.type, 'beginTransaction');
+                postgresql.onEvent = null;
+                done();
+            };
+        });
+
+        it('emits an "update" event', function(done) {
+            function handler(evt) {
+                assert.equal(evt.item.id, 3);
+                done();
+            }
+
+            postgresql.once('update', handler);
+        });
+
+        it('executes an onUpdate handler', function(done) {
+            postgresql.onUpdate = function (evt) {
+                assert.equal(evt.item.id, 4);
+                postgresql.onUpdate = null;
+                done();
+            };
+        });
+    });
+
+    describe('to stream delete events', function() {
+        var id = 0;
+
+        beforeEach(function(done) {
+            var sql = `DELETE FROM test_table WHERE id = ${++id};`;
+
+            client.query(sql, function (err, result) {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('emits an "event" event', function(done) {
+            function handler(evt) {
+                assert.equal(evt.type, 'beginTransaction');
+                assert.equal(typeof evt.id, 'number');
+                done();
+            }
+
+            postgresql.once('event', handler);
+        });
+
+        it('executes an onEvent handler', function(done) {
+            postgresql.onEvent = function (evt) {
+                assert.equal(typeof evt.id, 'number');
+                assert.equal(evt.type, 'beginTransaction');
+                postgresql.onEvent = null;
+                done();
+            };
+        });
+
+        it('emits a "delete" event', function(done) {
+            function handler(evt) {
+                assert.equal(evt.pk, 3);
+                assert.equal(evt.item.id, 3);
+                done();
+            }
+
+            postgresql.once('delete', handler);
+        });
+
+        it('executes an onDelete handler', function(done) {
+            postgresql.onDelete = function (evt) {
+                assert.equal(evt.pk, 4);
+                assert.equal(evt.item.id, 4);
+                postgresql.onDelete = null;
+                done();
+            };
         });
     });
 
