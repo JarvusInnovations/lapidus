@@ -2,21 +2,14 @@
 
 SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots;
 
-DROP DATABASE IF EXISTS hurley;
-DROP DATABASE IF EXISTS lapidus;
-
-DROP ROLE IF EXISTS lapidus;
-DROP ROLE IF EXISTS hurley;
-
-CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
-CREATE DATABASE lapidus OWNER lapidus;
-
-CREATE ROLE hurley PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
-CREATE DATABASE hurley OWNER hurley;
-
 \c lapidus;
 
-CREATE TYPE sex AS ENUM ('M', 'F');
+DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sex') THEN
+      CREATE TYPE sex AS ENUM ('M', 'F');
+    END IF;
+END$$;
 
 CREATE TABLE IF NOT EXISTS "test_table" (
   "id" serial NOT NULL PRIMARY KEY,
@@ -29,7 +22,12 @@ CREATE TABLE IF NOT EXISTS "test_table" (
  
 \c hurley;
 
-CREATE TYPE sex AS ENUM ('M', 'F');
+DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sex') THEN
+      CREATE TYPE sex AS ENUM ('M', 'F');
+    END IF;
+END$$;
 
 CREATE TABLE IF NOT EXISTS "test_table" (
   "id" serial NOT NULL PRIMARY KEY,
