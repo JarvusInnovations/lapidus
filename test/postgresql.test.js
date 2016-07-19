@@ -215,6 +215,32 @@ describe('PostgreSQL', function () {
         describe('to stream insert events', function() {
             var txId;
 
+            before(function(done) {
+                var sql = `
+                    DO $$
+
+                    BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sex') THEN
+                            CREATE TYPE sex AS ENUM ('M', 'F');
+                        END IF;
+                    END$$;
+
+                    CREATE TABLE IF NOT EXISTS "test_table" (
+                    "id" serial NOT NULL PRIMARY KEY,
+                    "first_name" varchar(100) NOT NULL,
+                    "last_name" varchar(200) NOT NULL,
+                    "sex" sex DEFAULT NULL,
+                    "dob" timestamp DEFAULT NULL,
+                    "nullable" varchar(300) DEFAULT NULL
+                    );
+                `;
+
+                client.query(sql, function(err, result) {
+                    assert.ifError(err);
+                    done();
+                });
+            });
+
             beforeEach(function(done) {
                 var sql = `
                     INSERT INTO test_table
