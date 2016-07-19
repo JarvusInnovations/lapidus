@@ -53,13 +53,11 @@ describe('PostgreSQL', function () {
     before(function (done) {
         this.timeout(5000);
         output = spawnSync('psql', ['-f', './test/sql/postgresql_setup.sql'], {timeout: 5000});
-        console.log(output);
-        done();
-    })
-
-    it('executed the setup script', function () {
         assert.equal(output.status, 0);
-        assert.equal(output.stderr.toString(), '');    
+        console.log(output.stdout.toString());
+        console.log(output.stderr.toString());
+        assert.equal(output.stderr.toString(), '');
+        done();
     });
 
     it('node established a client connection to generate events using the pg library', function (done) {
