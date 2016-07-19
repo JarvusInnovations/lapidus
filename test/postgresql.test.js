@@ -50,17 +50,15 @@ describe('PostgreSQL', function () {
         assert.equal(output.stderr.toString(), '');
     });
 
-    before(function (done) {
-        this.timeout(5000);
-
-        if (!process.env.CI) {
+    if (!process.env.CI) {
+        before(function (done) {
+            this.timeout(5000);
             output = spawnSync('psql', ['-f', './test/sql/postgresql_setup.sql'], {timeout: 5000});
-        }
-        
-        assert.equal(output.stderr.toString(), '');
-        assert.equal(output.status, 0);
-        done();
-    });
+            assert.equal(output.stderr.toString(), '');
+            assert.equal(output.status, 0);
+            done();
+        });
+    }
 
     it('node established a client connection to generate events using the pg library', function (done) {
         client = new pg.Client(config);
