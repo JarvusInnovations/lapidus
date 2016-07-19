@@ -362,6 +362,77 @@ describe('PostgreSQL', function () {
         });
     });
 
+    describe('to stream transaction events', function() {
+        var id = 0;
+
+        beforeEach(function(done) {
+            var sql = `BEGIN TRANSACTION;
+
+                        INSERT INTO test_table
+                                (first_name, last_name, sex, dob, nullable)
+                            VALUES ('Transaction', 'Man', 'M','1952-11-29T12:34:56.000Z', null);
+                            
+                        UPDATE test_table
+                           SET first_name = 'Ricky',
+                               last_name = 'Sanchez'
+                         WHERE first_name = 'Transaction'
+                           AND last_name = 'Man';
+
+                        DELETE FROM test_table WHERE first_name = 'Ricky' AND last_name = 'Sanchez';
+                        
+                        COMMIT;`;
+
+            client.query(sql, function (err, result) {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('emits an "event" event', function(done) {
+            function handler(evt) {
+                assert.equal(evt.type, 'beginTransaction');
+                assert.equal(typeof evt.id, 'number');
+                done();
+            }
+
+            postgresql.once('event', handler);
+        });
+
+        it('executes an onEvent handler', function(done) {
+            postgresql.onEvent = function (evt) {
+                assert.equal(typeof evt.id, 'number');
+                assert.equal(evt.type, 'beginTransaction');
+                postgresql.onEvent = null;
+                done();
+            };
+        });
+
+        it('emits a "transaction" event', function(done) {
+            function handler(evt) {
+                assert(Array.isArray(evt.items), 'items in an array');
+                done();
+            }
+
+            postgresql.once('transaction', handler);
+        });
+
+        it('executes a onTransaction handler', function(done) {
+            postgresql.onTransaction = function (evt) {
+                var idEvents,
+                    id;
+                assert(Array.isArray(evt.items), 'items is an array');
+                idEvents = evt.items.filter(evt => evt.item.id !== undefined);
+                id = idEvents[0].item.id;
+                assert(idEvents.every(evt => evt.item.id === id), 'mismatched row id');
+                assert.equal(idEvents[0].type, 'insert');
+                assert.equal(idEvents[1].type, 'update');
+                assert.equal(idEvents[2].type, 'delete');
+                postgresql.onTransaction = null;
+                done();
+            };
+        });
+    });
+
     describe('jsoncdc properly handles built-in PostgreSQL data types', function () {
 
         // These are extracted using a jQuery snippet from the official documentation:

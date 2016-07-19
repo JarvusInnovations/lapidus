@@ -8,6 +8,24 @@ const exec = require('child_process').exec;
 const execFile = require('child_process').execFile;
 const spawn = require('child_process').spawn;
 const async = require('async');
+const assert = require('assert');
+
+function DatabaseTransaction(txId) {
+    this.txId = txId;
+    this.stack = [];
+}
+
+DatabaseTransaction.prototype.push = function(event) {
+    return this.stack.push(event);
+};
+
+DatabaseTransaction.prototype.commit = function commit(ts) {
+    return this.event || (this.event = {
+        items: this.stack,
+        id: this.txId,
+        ts: ts
+    });
+};
 
 function PostgresLogicalReceiver(options) {
     var defaults = {
@@ -28,6 +46,10 @@ function PostgresLogicalReceiver(options) {
         self = this;
 
     options = options || {};
+
+    this.currentTxId = null;
+    // WARNING: This is not schema-aware in the PostgreSQL sense; it is only useful internally
+    this.schemaCache = {};
 
     for (var prop in defaults) {
         // Prevent passwords from appearing in errors/logs
@@ -53,7 +75,7 @@ function PostgresLogicalReceiver(options) {
         });
     }
 
-    // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
+    // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly set values.
 
     Object.defineProperty(this, "_emitEvents", {
         enumerable: false,
@@ -404,7 +426,8 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                     type,
                     eventHandler,
                     eventHandlerWrapper,
-                    emitEvent;
+                    emitEvent,
+                    transactionEvent;
 
                 if (line.charAt(0) === '{') {
                     try {
@@ -443,18 +466,25 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
 
                             msg = {
                                 table: tableName,
-                                schema: line.schema,
-                                item: line['@']
+                                schema: self.schemaCache[tableName],
+                                item: line['@'],
+                                txId: self.currentTxId,
                             };
 
                             if (typeof line['@'] === 'object') {
                                 msg.pk = line['@'][Object.keys(line['@']).filter(key => line['@'][key] !== null).shift()] || null;
+                            }
+
+                            if (self.emitTransaction) {
+                                self.currentTx.push(msg);
                             }
                         } else if (line.schema) {
                             action = 'schema';
                             eventHandler = 'onSchema';
                             eventHandlerWrapper = 'onSchemaWrapper';
                             emitEvent = 'emitSchema';
+
+                            self.schemaCache[tableName] = line.schema;
                         } else if (line.begin) {
                             action = 'beginTransaction';
                             eventHandler = 'onBeginTransaction';
@@ -464,6 +494,11 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                             msg = {
                                 'id': line.begin
                             };
+
+                            if (self.emitTransaction) {
+                                self.currentTxId = line.begin;
+                                self.currentTx = new DatabaseTransaction(self.currentTxId);
+                            }
                         } else if (line.commit) {
                             action = 'commitTransaction';
                             eventHandler = 'onCommitTransaction';
@@ -474,6 +509,11 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                                 'id': line.commit,
                                 'timestamp': new Date(line.t)
                             };
+
+                            if (self.emitTransaction) {
+                                assert.equal(self.currentTxId, line.commit, 'Mismatched currentTxId');
+                                transactionEvent = self.currentTx.commit(msg.timestamp);
+                            }
                         } else {
                             console.error(new Error('jsoncdc sent an unknown event type: ' + line));
                             return;
@@ -485,9 +525,30 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                             msg = {
                                 table: tableName,
                                 pk: pk,
-                                schema: line.schema,
-                                item: (line[action] || pk)
+                                schema: self.schemaCache[tableName],
+                                item: (line[action] || pk),
+                                txId: self.currentTxId
                             };
+
+                            if (self.emitTransaction) {
+                                self.currentTx.push(msg);
+                            }
+                        }
+
+                        if (transactionEvent) {
+                            if (self.emitTransaction) {
+                                self.emit('transaction', transactionEvent);    
+                            }
+
+                            if (self.onTransaction) {
+                                if (self.onTransactionWrapper) {
+                                    self.onTransactionWrapper(function () {
+                                        self.onTransaction(transactionEvent, transactionEvent);
+                                    });            
+                                } else {
+                                    self.onTransaction(transactionEvent, transactionEvent);    
+                                }
+                            }
                         }
 
                         if (self[eventHandler]) {
@@ -505,6 +566,18 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                         if (self.onEvent) {
                             msg.type = action;
 
+                            if (transactionEvent) {
+                                transactionEvent.type = 'transaction';
+
+                                if (self.onEventWrapper) {
+                                    self.onEventWrapper(function () {
+                                        self.onEvent(transactionEvent, line);
+                                    });
+                                } else {
+                                    self.onEvent(transactionEvent, transactionEvent);
+                                }
+                            }
+
                             if (self.onEventWrapper) {
                                 self.onEventWrapper(function () {
                                     self.onEvent(msg, line);
@@ -517,6 +590,11 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
                         if (self.emitEvent) {
                             msg.type = action;
                             self.emit('event', msg);
+
+                            if (transactionEvent) {
+                                transactionEvent.type = 'transaction';
+                                self.emit('event', transactionEvent);
+                            }
                         }
                     } catch (e) {
                         self.emit('error', e + line);
