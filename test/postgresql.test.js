@@ -45,9 +45,9 @@ describe('PostgreSQL', function () {
         done();
     });
 
-    it('connects to PostgreSQL valid backends', function () {
-        assert.equal(output.status, 0);
+    it('connects to valid backends', function () {
         assert.equal(output.stderr.toString(), '');
+        assert.equal(output.status, 0);
     });
 
     if (!process.env.CI) {
