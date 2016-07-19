@@ -52,9 +52,11 @@ describe('PostgreSQL', function () {
 
     before(function (done) {
         this.timeout(5000);
-        output = spawnSync('psql', ['-f', './test/sql/postgresql_setup.sql'], {timeout: 5000});
-        console.error(output.stdout.toString());
-        console.warn(output.stderr.toString());
+
+        if (!process.env.CI) {
+            output = spawnSync('psql', ['-f', './test/sql/postgresql_setup.sql'], {timeout: 5000});
+        }
+        
         assert.equal(output.stderr.toString(), '');
         assert.equal(output.status, 0);
         done();

@@ -10,6 +10,10 @@ SELECT pg_drop_replication_slot(slot_name)
 DROP DATABASE IF EXISTS lapidus;
 DROP DATABASE IF EXISTS hurley;
 
+-- Drop exiting roles
+DROP ROLE IF EXISTS lapidus;
+DROP ROLE IF EXISTS hurley;
+
 -- Create lapidus role and database
 CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
 CREATE DATABASE lapidus OWNER lapidus;
