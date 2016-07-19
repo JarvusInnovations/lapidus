@@ -59,10 +59,7 @@ before_script:
   - sudo service mysql start
   - sudo service mysql status
   - sudo service postgresql status
-  - sudo su postgres -c "psql -c \"CREATE ROLE lapidus PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;\""
-  - sudo su postgres -c "psql -c 'CREATE DATABASE lapidus OWNER lapidus;'"
-  - sudo su postgres -c "psql -c \"CREATE ROLE hurley PASSWORD '2PQM9aiKMJX5chv76gYdFJNi' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;\""
-  - sudo su postgres -c "psql -c 'CREATE DATABASE hurley OWNER hurley;'"
+  - psql -U postgres -f test/sql/postgresql_setup.sql
   - mysql -e "CREATE DATABASE jacob;" -uroot
   - mysql -e "CREATE DATABASE sawyer;" -uroot
   - mysql -e "CREATE USER 'jacob'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
