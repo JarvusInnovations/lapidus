@@ -59,7 +59,7 @@ before_script:
   - sudo service mysql start
   - sudo service mysql status
   - sudo service postgresql status
-  - psql -U postgres -f test/sql/postgresql_setup.sql
+  - sudo su postgres -c "psql -f test/sql/postgresql_setup.sql"
   - mysql -e "CREATE DATABASE jacob;" -uroot
   - mysql -e "CREATE DATABASE sawyer;" -uroot
   - mysql -e "CREATE USER 'jacob'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
