@@ -16,7 +16,7 @@ function MySql(cfg) {
 
     EventEmitter.call(this);
 
-    // In V8, reading a boolean value ste 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
+    // In V8, reading a boolean value is 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly values.
 
     Object.defineProperty(this, "_emitEvents", {
         enumerable: false,
@@ -28,14 +28,14 @@ function MySql(cfg) {
     this.emitInsert = (typeof cfg.emitInsert === 'boolean') ? cfg.emitInsert : this._emitEvents;
     this.emitUpdate = (typeof cfg.emitUpdate === 'boolean') ? cfg.emitUpdate : this._emitEvents;
     this.emitDelete = (typeof cfg.emitDelete === 'boolean') ? cfg.emitDelete : this._emitEvents;
-    this.emitEvent =  (typeof cfg.emitEvent === 'boolean') ? cfg.emitEvent : this._emitEvents;
-    this.emitError = (typeof cfg.emitEvent === 'boolean') ? cfg.emitEvent : true;
+    this.emitEvent  = (typeof cfg.emitEvent === 'boolean') ? cfg.emitEvent : this._emitEvents;
+    this.emitError  = (typeof cfg.emitEvent === 'boolean') ? cfg.emitEvent : true;
 
     this.onInsert = (typeof cfg.onInsert === 'function') ? cfg.onInsert.bind(this) : false;
     this.onUpdate = (typeof cfg.onUpdate === 'function') ? cfg.onUpdate.bind(this) : false;
     this.onDelete = (typeof cfg.onDelete === 'function') ? cfg.onDelete.bind(this) : false;
-    this.onEvent =  (typeof cfg.onEvent === 'function')  ? cfg.onEvent.bind(this)  : false;
-    this.onError =  (typeof cfg.onError === 'function')  ? cfg.onError.bind(this)  : false;
+    this.onEvent  = (typeof cfg.onEvent === 'function')  ? cfg.onEvent.bind(this)  : false;
+    this.onError  = (typeof cfg.onError === 'function')  ? cfg.onError.bind(this)  : false;
 
     if (this.emitError || this.onError) {
         this.zongji.on('error', function (error) {
