@@ -27,21 +27,21 @@ Lapidus.prototype.parseConfig = function parseConfig(config) {
 
 Lapidus.prototype.validatePluginConfig = function validatePluginConfig (plugin, pluginConfig, scopeConfig, globalConfig) {
     var pluginFilename = path.join(__dirname, `plugins/${plugin}.js`),
-        plugin,
         errors = [];
 
     if (typeof plugin !== 'string') {
         errors.push(`Invalid plugin name: "${plugin}" is not a string`);
-        return errors;
-    }
-
-    if (!fs.existsSync(pluginFilename)) {
-        errors.push(`Unable to load ${plugin} plugin: ${pluginFilename} does not exist.`);
+    } else if (!fs.existsSync(pluginFilename)) {
+        errors.push(`Unable to load ${plugin} plugin: ${pluginFilename} does not exist or is unreadable.`);
     } else {
-        plugin = require(pluginFilename);
+        try {
+            plugin = require(pluginFilename);
 
-        if (typeof plugin.validateConfig === 'function') {
-            errors = errors.concat(plugin.validateConfig(pluginConfig, scopeConfig, globalConfig));
+            if (typeof plugin.validateConfig === 'function') {
+                errors = errors.concat(plugin.validateConfig(pluginConfig, scopeConfig, globalConfig));
+            }
+        } catch (e) {
+            errors.push(`Failed to load ${plugin} plugin (${pluginFilename}): ${e}`);
         }
     }
 
@@ -59,7 +59,7 @@ Lapidus.prototype.validateConfig = function validateConfig(config) {
             var workerFilename = path.join(__dirname, `${backend.type}-worker.js`);
 
             if (!fs.existsSync(workerFilename)) {
-                errors.push('Invalid backend type specified: ' + backend.type);
+                errors.push(`Invalid backend type specified: ${backend.type}`);
             }
 
             // worker-scoped plugins
@@ -71,9 +71,9 @@ Lapidus.prototype.validateConfig = function validateConfig(config) {
         });
     }
 
+    // global plugins
     if (typeof config.plugins === 'object') {
         for (var plugin in config.plugins) {
-            // global plugins
             errors = errors.concat(self.validatePluginConfig(plugin, config.plugins[plugin], config, config));
         }
     }
@@ -86,11 +86,10 @@ Lapidus.prototype.validateConfig = function validateConfig(config) {
 };
 
 Lapidus.prototype.start = function start() {
-    var self = this,
-        config = this.config;
+    var config = this.config;
 
     if (cluster.isMaster) {
-        config.backends.forEach(function (backend, i) {
+        config.backends.forEach(function (backend) {
             var workerFilename = path.join(__dirname, `${backend.type}-worker.js`),
                 worker;
 
