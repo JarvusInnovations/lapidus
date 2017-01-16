@@ -1,9 +1,24 @@
 os:
   - linux
 
+dist: trusty
+sudo: required
+
 env:
   global:
-  - PGVERSION=9.5
+  - PGVERSION=9.6
+
+addons:
+  postgresql: "9.6"
+  apt:
+    packages:
+    - postgresql-9.6
+    - postgresql-server-dev-9.6
+    - postgresql-contrib-9.6
+    - python-setuptools
+
+  services:
+    - postgresql
 
 language: node_js
 node_js:
@@ -19,26 +34,12 @@ notifications:
     on_failure: always
     on_start: never
 
-before_install:
-  - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-  - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main 9.5" >> /etc/apt/sources.list.d/postgresql.list'
-  - sudo add-apt-repository -y ppa:hansjorg/rust
-  - sudo update-alternatives --remove-all postmaster.1.gz
-  - sudo service postgresql stop
-  - sudo apt-get remove -y postgresql-9.1 postgresql-9.2 postgresql-9.3 postgresql-9.4 postgresql-common postgresql-contrib
-  - sudo apt-get purge -y postgresql-9.1 postgresql-9.2 postgresql-9.3 postgresql-9.4 postgresql-common postgresql-contrib
-  - sudo rm -rf /etc/postgresql
-  - sudo rm -rf /var/lib/postgresql
-  - sudo apt-get update -y
-
-
 install:
-  - sudo apt-get install -y postgresql-common postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PGVERSION python-setuptools
   - sudo curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
-  - ln -s /root/.cargo/bin/cargo /usr/local/bin/cargo
-  - ln -s /root/.cargo/bin/rustc /usr/local/bin/rustc
+  - sudo ln -s ~/.cargo/bin/cargo /usr/local/bin/cargo
+  - sudo ln -s ~/.cargo/bin/rustc /usr/local/bin/rustc
   - sudo easy_install pgxnclient
-  - sudo pgxn install jsoncdc --unstable
+  - sudo bash -c "pgxn install jsoncdc --unstable"
 
 before_script:
   - sudo bash -c "cat test/config/bin-log.cnf >> /etc/mysql/conf.d/bin-log.cnf"
@@ -47,22 +48,23 @@ before_script:
   - sudo bash -c "cat test/config/redis.conf >> /etc/redis/redis.conf"
   - sudo service redis-server start
   - mkdir the_hatch
-  - wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.4.tgz -O /tmp/mongodb.tgz
+  - wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1404-3.4.1.tgz -O /tmp/mongodb.tgz
   - tar -xvf /tmp/mongodb.tgz
-  - ${PWD}/mongodb-linux-x86_64-3.0.4/bin/mongod --port 27017 --dbpath the_hatch --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongod --port 27017 --dbpath the_hatch --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
   - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
-  - ${PWD}/mongodb-linux-x86_64-3.0.4/bin/mongo lapidus --eval 'printjson(rs.initiate());'
-  - sleep 20
-  - ${PWD}/mongodb-linux-x86_64-3.0.4/bin/mongo lapidus --eval 'db.getMongo().setSlaveOk();'
-  - ${PWD}/mongodb-linux-x86_64-3.0.4/bin/mongo lapidus --eval 'db.createUser({user:"lapidus",pwd:"2PQM9aiKMJX5chv76gYdFJNi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
-  - ${PWD}/mongodb-linux-x86_64-3.0.4/bin/mongo lapidus --eval 'db.createUser({user:"walt",pwd:"EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'printjson(rs.initiate());'
   - sudo service mysql stop
-  - sudo service postgresql stop
-  - sudo service postgresql start
+  - sudo service postgresql stop 9.6
+  - sleep 10
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'db.getMongo().setSlaveOk();'
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'db.createUser({user:"lapidus",pwd:"2PQM9aiKMJX5chv76gYdFJNi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'db.createUser({user:"walt",pwd:"EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
+  - sudo service postgresql start 9.6
   - sudo service mysql start
   - sudo service mysql status
-  - sudo service postgresql status
-  - sudo su postgres -c "psql -f test/sql/postgresql_setup.sql"
+  - sudo cp /home/travis/build/JarvusInnovations/lapidus/test/sql/postgresql_setup.sql /tmp
+  - sudo chown postgres:postgres /tmp/postgresql_setup.sql
+  - sudo su postgres -c "psql -f /tmp/postgresql_setup.sql"
   - mysql -e "CREATE DATABASE jacob;" -uroot
   - mysql -e "CREATE DATABASE sawyer;" -uroot
   - mysql -e "CREATE USER 'jacob'@'localhost' IDENTIFIED BY '2PQM9aiKMJX5chv76gYdFJNi';" -uroot
