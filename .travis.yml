@@ -10,6 +10,7 @@ env:
 
 addons:
   postgresql: "9.6"
+  mariadb: "10.1"
   apt:
     packages:
     - postgresql-9.6
@@ -60,6 +61,7 @@ before_script:
   - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'db.createUser({user:"lapidus",pwd:"2PQM9aiKMJX5chv76gYdFJNi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
   - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'db.createUser({user:"walt",pwd:"EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
   - sudo service postgresql start 9.6
+  - sudo service postgresql status
   - sudo service mysql start
   - sudo service mysql status
   - sudo cp /home/travis/build/JarvusInnovations/lapidus/test/sql/postgresql_setup.sql /tmp
