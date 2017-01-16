@@ -31,9 +31,12 @@ before_install:
   - sudo rm -rf /var/lib/postgresql
   - sudo apt-get update -y
 
+
 install:
-  - sudo apt-get install -y postgresql-common postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PGVERSION python-setuptools rust-stable
-  - sudo curl -sSf https://static.rust-lang.org/rustup.sh | sh
+  - sudo apt-get install -y postgresql-common postgresql-$PGVERSION postgresql-client-$PGVERSION  postgresql-contrib-$PGVERSION postgresql-server-dev-$PGVERSION python-setuptools
+  - sudo curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+  - ln -s /root/.cargo/bin/cargo /usr/local/bin/cargo
+  - ln -s /root/.cargo/bin/rustc /usr/local/bin/rustc
   - sudo easy_install pgxnclient
   - sudo pgxn install jsoncdc --unstable
 
