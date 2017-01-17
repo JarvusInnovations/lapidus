@@ -9,7 +9,7 @@ const execFile = require('child_process').execFile;
 const spawn = require('child_process').spawn;
 const async = require('async');
 const assert = require('assert');
-const ldj = require('ldjson-stream')
+const ldj = require('ldjson-stream');
 
 function DatabaseTransaction(txId) {
     this.txId = txId;
@@ -49,12 +49,11 @@ function PostgresLogicalReceiver(options) {
     options = options || {};
 
     this.currentTxId = null;
-    // WARNING: This is not schema-aware in the PostgreSQL sense; it is only useful internally
     this.schemaCache = {};
 
     for (var prop in defaults) {
         // Prevent passwords from appearing in errors/logs
-        if (prop === 'password' || prop == 'env') {
+        if (prop === 'password' || prop === 'env') {
             Object.defineProperty(this, prop, {
                 value: typeof options[prop] === 'undefined' ? defaults[prop] : options[prop],
                 enumerable: false,
@@ -77,7 +76,6 @@ function PostgresLogicalReceiver(options) {
     }
 
     // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly set values.
-
     Object.defineProperty(this, "_emitEvents", {
         enumerable: false,
         writable: true
@@ -174,9 +172,13 @@ function isExecutable(path, callback) {
                 return callback(null, true);
             }
 
-            return callback(null, (file.mode & parseInt('0001', 8)) || (file.mode & parseInt('0010', 8)) &&
-                process.getgid && file.gid === process.getgid() ||
-                (file.mode & parseInt('0100', 8)) && process.getuid && file.uid === process.getuid());
+            let isExecutable = (file.mode & parseInt('0001', 8)) ||
+                               (file.mode & parseInt('0010', 8)) &&
+                               process.getgid && file.gid === process.getgid() ||
+                               (file.mode & parseInt('0100', 8)) &&
+                               process.getuid && file.uid === process.getuid();
+
+            return callback(null, isExecutable);
         }
 
         return callback(new Error(path + ' is either missing or not executable'), false);
@@ -194,6 +196,7 @@ PostgresLogicalReceiver.prototype.stdErrorToEvent = function stdErrorToEvent(lin
         return;
     }
 
+    /* Parse the human readable output of pg_recvlogical (https://doxygen.postgresql.org/pg__recvlogical_8c.html) */
     if (firstThree === 'cou' || firstThree === 'unr' || firstThree === 'une' || firstThree === 'sel') {
         eventType = 'error';
     } else if (firstThree === 'con') {
@@ -305,7 +308,9 @@ PostgresLogicalReceiver.prototype.createSlot = function createSlot(slot, callbac
         timeout: this.timeout
     }, function (error, stdout, stderr) {
         if (error) {
-            if (error.message.indexOf('already exists') === -1) {
+            let slotAlreadyExists = error.message.contains('already exists') === -1;
+
+            if (!slotAlreadyExists) {
                 return callback(new Error('Failed to create slot: ' + stderr), false);
             }
         }
