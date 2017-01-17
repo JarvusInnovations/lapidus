@@ -628,7 +628,7 @@ PostgresLogicalReceiver.prototype.init = function init(callback) {
         pg_isready: ['pg_config', function (cb) {
             isExecutable(self.binPath + '/pg_isready', function (err, executable) {
                 if (err || !executable) {
-                    cb(new Error(self.binPath + '/pg_isready is missing or not executable'), false);
+                    return cb(new Error(self.binPath + '/pg_isready is missing or not executable'), false);
                 }
 
                 cb(null, true);
@@ -638,7 +638,7 @@ PostgresLogicalReceiver.prototype.init = function init(callback) {
         pg_recvlogical: ['pg_config', function (cb) {
             isExecutable(self.binPath + '/pg_recvlogical', function (err, executable) {
                 if (err || !executable) {
-                    cb(new Error(self.binPath + '/pg_recvlogical is missing or not executable'), false);
+                    return cb(new Error(self.binPath + '/pg_recvlogical is missing or not executable'), false);
                 }
 
                 cb(null, true);
@@ -648,7 +648,7 @@ PostgresLogicalReceiver.prototype.init = function init(callback) {
         psql: ['pg_config', function (cb) {
             isExecutable(self.binPath + '/psql', function (err, executable) {
                 if (err || !executable) {
-                    cb(new Error(self.binPath + '/psql is missing or not executable'), false);
+                    return cb(new Error(self.binPath + '/psql is missing or not executable'), false);
                 }
 
                 cb(null, true);
