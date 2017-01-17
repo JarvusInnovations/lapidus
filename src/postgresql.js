@@ -225,11 +225,11 @@ PostgresLogicalReceiver.prototype.getLinePrefix = function getLinePrefix(callbac
     var self = this;
 
     if (!this.binPath) {
-        callback(new Error('You must call .init() before calling .getLinePrefix'), null);
+        return callback(new Error('You must call .init() before calling .getLinePrefix'), null);
     }
 
     if (this.linePrefix) {
-        callback(null, this.linePrefix);
+        return callback(null, this.linePrefix);
     }
 
     execFile(this.binPath + '/pg_recvlogical', [], {timeout: this.timeout},
@@ -251,7 +251,7 @@ PostgresLogicalReceiver.prototype.getLinePrefix = function getLinePrefix(callbac
 
 PostgresLogicalReceiver.prototype.pgIsReady = function pgIsReady(callback) {
     if (!this.binPath) {
-        callback(new Error('You must call .init() before calling .pgIsReady()'), null);
+        return callback(new Error('You must call .init() before calling .pgIsReady()'), null);
     }
 
     exec(this.binPath + '/pg_isready', {timeout: this.timeout}, function (error, stdout, stderr) {
@@ -265,7 +265,7 @@ PostgresLogicalReceiver.prototype.pgIsReady = function pgIsReady(callback) {
 
 PostgresLogicalReceiver.prototype.canPsql = function canPsql(callback) {
     if (!this.binPath) {
-        callback(new Error('You must call .init() before calling .canPsql()'), null);
+        return callback(new Error('You must call .init() before calling .canPsql()'), null);
     }
 
     execFile(this.binPath + '/psql', ['-Atqwc', 'SELECT 1;'], {
