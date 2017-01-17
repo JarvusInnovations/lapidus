@@ -11,6 +11,10 @@ const async = require('async');
 const assert = require('assert');
 const ldj = require('ldjson-stream');
 
+/* TODO: Deprecate DatabaseTransaction as it is naive and will not work well with large transactions. If we flushed
+         to disk and used streams throughout we could support this but it'd be difficult to apply filters and work with
+         plugins.
+*/
 function DatabaseTransaction(txId) {
     this.txId = txId;
     this.stack = [];
