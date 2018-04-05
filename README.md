@@ -7,7 +7,7 @@
 
 # Getting Started
 Currently MySQL and PostgreSQL databases are fully supported. MongoDB supports inserts and deletes, however, updates
-return a copy of the operation (for example, a `$rename` operation will return a `$set` for the new field and an 
+return a copy of the operation (for example, a `$rename` operation will return a `$set` for the new field and an
 `$unset` for the old field) instead of the object as it exists in the database. Redis support is on the way. Lapidus can
 currently be used as a daemon or Node.js module. Support for piping line-delimited JSON to other processes is a high
 priority.
@@ -19,14 +19,16 @@ npm install -g lapidus
 
 ## PostgreSQL
 You'll need PostgreSQL 9.4 or higher with logical replication configured and the
-[JSONCDC](https://github.com/posix4e/jsoncdc) plugin installed and loaded. Any PostgreSQL fork that ships with
+[JSONCDC](https://github.com/instructure/jsoncdc) plugin installed and loaded. Any PostgreSQL fork that ships with
 `pg_recvlogical` *should* be compatible.
 
-**To install the [JSONCDC](https://github.com/posix4e/jsoncdc) logical decoding plugin using pgxn:**
+**To install the [JSONCDC](https://github.com/instructure/jsoncdc) logical decoding plugin using pgxn:**
 ```shell
 sudo easy_install pgxnclient
-pgxn install jsoncdc --unstable
+pgxn install jsoncdc --testing
 ```
+
+_NOTE: JSONCDC also provides .debs inside their releases repo, if you wish to not install through pgxn._
 
 **To enable logical decoding and the JSONCDC plugin add the following lines to your postgresql.conf:**
 ```
@@ -137,7 +139,7 @@ backend and publish all events to NATS using the NATS plugin:
       "password": "2PQM9aiKMJX5chv76gYdFJNi",
       "slot": "hurley_slot"
     },
-    
+
     {
       "type": "mongo",
       "hostname": "127.0.0.1",
@@ -186,7 +188,7 @@ messaging system.
       "database": "darma",
       "password": "notpennysboat123",
       "slot": "walts_raft",
-      
+
       "plugins": {
         "nats": {
           "server": "nats://localhost:4222"
