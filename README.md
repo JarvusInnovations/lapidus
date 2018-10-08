@@ -1,8 +1,8 @@
 ![Lapidus](http://i.imgur.com/Snuzp9w.png)
 # Lapidus
 
-[![Build Status](https://travis-ci.org/JarvusInnovations/lapidus.svg)](https://travis-ci.org/JarvusInnovations/lapidus)
-[![Coverage Status](https://coveralls.io/repos/JarvusInnovations/lapidus/badge.svg?branch=master&service=github)](https://coveralls.io/github/JarvusInnovations/lapidus?branch=master)
+[![pipeline status](https://gitlab.com/pgps/lapidus/badges/master/pipeline.svg)](https://gitlab.com/pgps/lapidus/commits/master)
+[![coverage report](https://gitlab.com/pgps/lapidus/badges/master/coverage.svg)](https://gitlab.com/pgps/lapidus/commits/master)
 [![Join the chat at https://gitter.im/JarvusInnovations/lapidus](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JarvusInnovations/lapidus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Getting Started
