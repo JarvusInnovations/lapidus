@@ -1,15 +1,52 @@
 services:
   - postgres
+  - mysql:latest
+  - mongodb:latest
 
 variables:
   # Configure postgres service (https://hub.docker.com/_/postgres/)
   POSTGRES_DB: custom_db
   POSTGRES_USER: custom_user
   POSTGRES_PASSWORD: custom_pass
+  MYSQL_DATABASE: el_duderino
+  MYSQL_ROOT_PASSWORD: mysql_strong_password
 
-connect:
+before_script:
+  - npm install
+
+connect_postgres:
   image: postgres:11
   script:
   # official way to provide password to psql: http://www.postgresql.org/docs/9.3/static/libpq-envars.html
   - export PGPASSWORD=$POSTGRES_PASSWORD
   - psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 'OK' AS status;"
+
+connect_mysql:
+  image: mysql:latest
+  script:
+  - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD -e"quit"
+
+connect_mongodb:
+  image: mongodb:latest
+  script:
+  - echo "TODO: mongodb"
+  
+bootstrap_postgres:
+  image: postgres:11
+  script:
+  - export PGPASSWORD=$POSTGRES_PASSWORD
+  - psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f ./test/bootstrap_postgresql.sql
+
+bootstrap_mysql:
+  image: mysql:latest
+  script:
+  - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD < ./test/bootstrap_mysql.sql
+
+bootstrap_mongodb:
+  image: mongodb:latest
+  script:
+  - echo "TODO: mongodb"
+
+coverage:
+  script:
+  - istanbul cover _mocha -- -R spec ./test/*
