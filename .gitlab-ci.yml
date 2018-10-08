@@ -1,5 +1,5 @@
 services:
-  - postgres
+  - postgres:11
   - mysql:latest
   - mariadb:latest
 
