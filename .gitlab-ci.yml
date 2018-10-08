@@ -2,7 +2,6 @@ services:
   - postgres
   - mysql:latest
   - mariadb:latest
-  - mongodb:latest
 
 variables:
   # Configure postgres service (https://hub.docker.com/_/postgres/)
