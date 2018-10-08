@@ -20,7 +20,7 @@ before_script:
   - sudo bash -c "pgxn install jsoncdc --testing"
   - npm install
   - npm run-script test-ci
-  
+
 connect_postgres:
   image: postgres:11
   script:
@@ -76,5 +76,4 @@ coverage:
   - istanbul cover _mocha -- -R spec ./test/*
 
 after_script:
-  script:
   - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js

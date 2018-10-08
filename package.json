@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "async": "^1.5.2",
+    "avvio": "^6.0.0",
     "errno": "^0.1.4",
     "jsonlint": "^1.6.2",
     "ldjson-stream": "^1.2.1",
