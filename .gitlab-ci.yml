@@ -14,7 +14,7 @@ variables:
   MYSQL_ROOT_PASSWORD: mysql_strong_password
 
 before_script:
-  - apk add --update curl && rm -rf /var/cache/apk/*
+  - apk add --update curl py-setuptools && rm -rf /var/cache/apk/*
   - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
   - ln -s ~/.cargo/bin/cargo /usr/local/bin/cargo
   - ln -s ~/.cargo/bin/rustc /usr/local/bin/rustc
