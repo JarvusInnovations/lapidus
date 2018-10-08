@@ -27,7 +27,7 @@
   "license": "MIT",
   "scripts": {
     "test": "mocha ./test/*",
-    "test-travis": "istanbul cover _mocha -- -R spec ./test/*"
+    "test-ci": "istanbul cover _mocha -- -R spec ./test/*"
   },
   "devDependencies": {
     "coveralls": "^2.11.4",

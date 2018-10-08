@@ -1,6 +1,7 @@
 services:
   - postgres
   - mysql:latest
+  - mariadb:latest
   - mongodb:latest
 
 variables:
@@ -12,8 +13,14 @@ variables:
   MYSQL_ROOT_PASSWORD: mysql_strong_password
 
 before_script:
+  - sudo curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+  - sudo ln -s ~/.cargo/bin/cargo /usr/local/bin/cargo
+  - sudo ln -s ~/.cargo/bin/rustc /usr/local/bin/rustc
+  - sudo easy_install pgxnclient
+  - sudo bash -c "pgxn install jsoncdc --testing"
   - npm install
-
+  - npm run-script test-ci
+  
 connect_postgres:
   image: postgres:11
   script:
@@ -26,27 +33,48 @@ connect_mysql:
   script:
   - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD -e"quit"
 
-connect_mongodb:
-  image: mongodb:latest
+connect_mariadb:
+  image: mariadb:latest
   script:
-  - echo "TODO: mongodb"
-  
+  - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD -e"quit"
+
 bootstrap_postgres:
+  stage: bootstrap
   image: postgres:11
   script:
   - export PGPASSWORD=$POSTGRES_PASSWORD
   - psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f ./test/bootstrap_postgresql.sql
 
 bootstrap_mysql:
+  stage: bootstrap
   image: mysql:latest
   script:
   - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD < ./test/bootstrap_mysql.sql
 
-bootstrap_mongodb:
-  image: mongodb:latest
+bootstrap_mariadb:
+  stage: bootstrap
+  image: mariadb:latest
   script:
-  - echo "TODO: mongodb"
+  - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD < ./test/bootstrap_mysql.sql
+
+bootstrap_mongodb:
+  stage: bootstrap
+  script:
+  - mkdir the_hatch
+  - wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1404-3.4.1.tgz -O /tmp/mongodb.tgz
+  - tar -xvf /tmp/mongodb.tgz
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongod --port 27017 --dbpath the_hatch --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
+  - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'printjson(rs.initiate());'
+  - sleep 10
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'db.getMongo().setSlaveOk();'
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'db.createUser({user:"lapidus",pwd:"2PQM9aiKMJX5chv76gYdFJNi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.4.1/bin/mongo lapidus --eval 'db.createUser({user:"walt",pwd:"EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
 
 coverage:
   script:
   - istanbul cover _mocha -- -R spec ./test/*
+
+after_script:
+  script:
+  - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
