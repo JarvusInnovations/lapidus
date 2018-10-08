@@ -1,3 +1,5 @@
+image: node:latest
+
 services:
   - postgres:11
   - mysql:latest
