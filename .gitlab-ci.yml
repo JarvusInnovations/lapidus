@@ -12,11 +12,11 @@ variables:
   MYSQL_ROOT_PASSWORD: mysql_strong_password
 
 before_script:
-  - sudo curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
-  - sudo ln -s ~/.cargo/bin/cargo /usr/local/bin/cargo
-  - sudo ln -s ~/.cargo/bin/rustc /usr/local/bin/rustc
-  - sudo easy_install pgxnclient
-  - sudo bash -c "pgxn install jsoncdc --testing"
+  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+  - ln -s ~/.cargo/bin/cargo /usr/local/bin/cargo
+  - ln -s ~/.cargo/bin/rustc /usr/local/bin/rustc
+  - easy_install pgxnclient
+  - bash -c "pgxn install jsoncdc --testing"
   - npm install
   - npm run-script test-ci
 
