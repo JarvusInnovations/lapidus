@@ -6,15 +6,12 @@
 [![Join the chat at https://gitter.im/JarvusInnovations/lapidus](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JarvusInnovations/lapidus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Getting Started
-Currently MySQL and PostgreSQL databases are fully supported. MongoDB supports inserts and deletes, however, updates
-return a copy of the operation (for example, a `$rename` operation will return a `$set` for the new field and an
-`$unset` for the old field) instead of the object as it exists in the database. Redis support is on the way. Lapidus can
-currently be used as a daemon or Node.js module. Support for piping line-delimited JSON to other processes is a high
-priority.
+Before you can use Lapidus, you must configure your database(s). Follow the instruction(s) for your databases below. For more advanced configurations, check out the .gitlab-ci.yml for ideas. 
 
 ## To install
 ```
 npm install -g lapidus
+yarn add lapidus
 ```
 
 ## PostgreSQL
