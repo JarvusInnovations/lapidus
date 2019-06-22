@@ -40,7 +40,7 @@ install:
   - sudo ln -s ~/.cargo/bin/cargo /usr/local/bin/cargo
   - sudo ln -s ~/.cargo/bin/rustc /usr/local/bin/rustc
   - sudo easy_install pgxnclient
-  - sudo bash -c "pgxn install jsoncdc --testing"
+  - sudo bash -c "pgxn install jsoncdc"
 
 before_script:
   - sudo bash -c "cat test/config/bin-log.cnf >> /etc/mysql/conf.d/bin-log.cnf"
