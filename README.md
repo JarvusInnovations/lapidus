@@ -1,4 +1,5 @@
 ![Lapidus](http://i.imgur.com/Snuzp9w.png)
+
 # Lapidus
 
 [![Build Status](https://travis-ci.org/JarvusInnovations/lapidus.svg)](https://travis-ci.org/JarvusInnovations/lapidus)
@@ -216,23 +217,17 @@ Insert, Update and Delete events will be published using the subject ``schema.ta
 ```javascript
 // TODO: sample delete
 ```
-### Caveats
 
-* At this time, transactions and other event types are not published to NATS.
-* Each worker uses its own connection to NATS using non-blocking event emitters; out of order delivery is likely.
-* NATS does not guarantee in order delivery so a blocking variant is not likely (it's 10-20 LoC if you're interested).
-* ``pg_temp_`` tables are filtered. (TOAST and materialized views generate events that most would consider noise.)
+# Production usage
+Lapidus worked well for 5k concurrent clients on $5-10 Digital Ocean droplets using the MySQL and PostgreSQL backends
+and per-tenant socket.io servers using the NATS plugin. Typical latency between MySQL -> Lapidus -> NATS within a
+datacenter was 1ms - 3ms. Since our messages were fire-and-forget, we never solved for the gotchas below and our
+end-user lag and CPU usage were neglible . Since NATS will disconnect slow consumers there was good tenant isolation
+without much work.
 
-### Gotchas
-* If you encounter issues with the WAL stream failing due to SSL connection issues when connecting over a VPN check your
-MTU. This is not an issue with Lapidus or pg_recv_logical and must be addressed as a network/connection issue. You may
-see "Invalid Syntax Error" in the Lapidus log due to JSON being split into multiple messages. (Lapidus is expecting
-line delimited JSON).
-
-# Production status
-Lapidus is currently under heavy development. It is deployed with 1250 simultaneous users on very modest hardware using
-the MySQL and PostgreSQL backends and NATS plugin. Typical latency between MySQL -> Lapidus -> NATS is 1ms - 3ms. Please
-share your results. Benchmark and load testing scripts will be made available.
+# Gotchas
+To prevent a deluge of events during bulk loading of data or restoration of backups make sure your procedures/scripts
+stop Lapidus and/or delete/reset any persistent subscriptions or message queues external to Lapdidus as needed.
 
 # Resource requirements
 
