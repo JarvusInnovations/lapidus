@@ -40,7 +40,7 @@ install:
   - sudo curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
   - sudo ln -s ~/.cargo/bin/cargo /usr/local/bin/cargo
   - sudo ln -s ~/.cargo/bin/rustc /usr/local/bin/rustc
-  - sudo bash -c "pgxn install jsoncdc"
+  - sudo bash -c "pgxn install jsoncdc --unstable"
 
 before_script:
   - source /etc/lsb-release
