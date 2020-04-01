@@ -405,8 +405,10 @@ PostgresLogicalReceiver.prototype.lineHandler = function lineHandler(line) {
         tableName = line.table;
 
     // Exit-early
-    if (table.startsWith('pg_temp_')) return;
-    if (self.excludeTables && self.excludeTables.includes(table)) return;
+    if (table) {
+        if (table.startsWith('pg_temp_')) return;
+        if (self.excludeTables && self.excludeTables.includes(table)) return;
+    }
 
     switch (action) {
         case 'I':
