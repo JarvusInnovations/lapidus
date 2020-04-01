@@ -355,7 +355,6 @@ describe('PostgreSQL', function () {
         it('emits a "delete" event', function(done) {
             function handler(evt) {
                 assert.equal(evt.pk, 3);
-                assert.equal(evt.item.id, 3);
                 done();
             }
 
@@ -365,7 +364,6 @@ describe('PostgreSQL', function () {
         it('executes an onDelete handler', function(done) {
             postgresql.onDelete = function (evt) {
                 assert.equal(evt.pk, 4);
-                assert.equal(evt.item.id, 4);
                 postgresql.onDelete = null;
                 done();
             };
@@ -431,9 +429,11 @@ describe('PostgreSQL', function () {
                 var idEvents,
                     id;
                 assert(Array.isArray(evt.items), 'items is an array');
-                idEvents = evt.items.filter(evt => evt.item.id !== undefined);
+                idEvents = evt.items.filter(evt => evt.item && evt.item.id !== undefined);
+                assert(idEvents.length > 0, 'no events with ids to verify correct ids');
                 id = idEvents[0].item.id;
                 assert(idEvents.every(evt => evt.item.id === id), 'mismatched row id');
+                console.log(idEvents);
                 assert.equal(idEvents[0].type, 'insert');
                 assert.equal(idEvents[1].type, 'update');
                 assert.equal(idEvents[2].type, 'delete');
@@ -455,11 +455,13 @@ describe('PostgreSQL', function () {
 
         it('emits an "event" event', function(done) {
             function handler(evt) {
-                assert.equal(evt.type, 'truncate');
-                // TODO: add more assertions
+                if (evt.type === 'truncate') {
+                    done();
+                    postgresql.off('event', handler);
+                }
             }
 
-            postgresql.once('event', handler);
+            postgresql.on('event', handler);
         });
 
         it('executes an onEvent handler', function(done) {
@@ -482,7 +484,7 @@ describe('PostgreSQL', function () {
         it('executes an onTruncate handler', function(done) {
             postgresql.onTruncate = function (evt) {
                 assert.equal(evt.type, 'truncate');
-                postgresql.onTransaction = null;
+                postgresql.onTruncate = null;
                 done();
             };
         });

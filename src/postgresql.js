@@ -313,20 +313,17 @@ PostgresLogicalReceiver.prototype.createSlot = function createSlot(slot, callbac
 
     if (this.decodingPlugin === 'wal2json') {
         const wal2jsonOptions = {
-            'include-xids': true,
-            'include-timestamp': true,
-            'include-column': true,
-            'include-types': true,
-            'include-typmod': true,
-            'include-lsn': true,
-            'write-in-chunks': true,
+            'include-xids': 1,
+            'include-timestamp': 1,
+            'include-types': 1,
+            'include-typmod': 1,
+            'include-lsn': 1,
+            'write-in-chunks': 1,
             'format-version': 2
         };
 
-        commandArguments = commandArguments.concat(Object.keys(wal2jsonOptions).map(k => `-o ${k}=${wal2jsonOptions[k]}`))
+        commandArguments = commandArguments.concat(Object.keys(wal2jsonOptions).map(k => `-o${k}=${wal2jsonOptions[k]}`))
     }
-
-    console.log(commandArguments);
 
     execFile(this.binPath + '/pg_recvlogical', commandArguments, {
         env: this.env,
@@ -392,17 +389,17 @@ PostgresLogicalReceiver.prototype.stop = function stop(callback) {
 };
 
 PostgresLogicalReceiver.prototype.lineHandler = function lineHandler(line) {
-    let {action, schema, table, columns} = line;
+    let {schema, table} = line;
 
-    var pk,
+    var action,
+        pk,
         msg,
         type,
         eventHandler,
         eventHandlerWrapper,
         emitEvent,
         transactionEvent,
-        self = this,
-        tableName = line.table;
+        self = this;
 
     // Exit-early
     if (table) {
@@ -410,7 +407,7 @@ PostgresLogicalReceiver.prototype.lineHandler = function lineHandler(line) {
         if (self.excludeTables && self.excludeTables.includes(table)) return;
     }
 
-    switch (action) {
+    switch (line.action) {
         case 'I':
             action = 'insert';
             eventHandler = 'onInsert';
@@ -419,9 +416,9 @@ PostgresLogicalReceiver.prototype.lineHandler = function lineHandler(line) {
             break;
         case 'U':
             action = 'update';
-            eventHandler = 'onInsert';
-            eventHandlerWrapper = 'onInsertWrapper';
-            emitEvent = 'emitInsert';
+            eventHandler = 'onUpdate';
+            eventHandlerWrapper = 'onUpdateWrapper';
+            emitEvent = 'emitUpdate';
             break;
         case 'D':
             action = 'delete';
@@ -481,18 +478,27 @@ PostgresLogicalReceiver.prototype.lineHandler = function lineHandler(line) {
     if (!msg) {
         pk = (line.identity || []).map(i => i.value).join('.');
 
-        let item = {};
-        line.columns.forEach(column => item[column.name] = column.value);
-
         msg = {
-            table: table,
-            pk: pk,
+            table,
+            pk,
             identity: line.identity,
             schema: schema,
-            columns: line.columns,
-            item: item,
             txId: self.currentTxId
         };
+
+        // Backwards compatibility with jsoncdc
+        if (line.columns) {
+            let item = {};
+            line.columns.forEach(column => item[column.name] = column.value);
+            msg.item = item;
+            msg.columns = line.columns;
+        }
+
+        if (action === 'delete') {
+            let item = {};
+            line.identity.forEach(column => item[column.name] = column.value);
+            msg.item = item;
+        }
 
         if (self.emitTransaction) {
             self.currentTx.push(msg);
@@ -588,13 +594,29 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
             return callback(err);
         }
 
-        self.spawn = pg_recvlogical = spawn(self.binPath + '/pg_recvlogical', [
+        let commandArguments = [
             '--slot=' + slot,
             '--plugin=' + self.decodingPlugin,
             '--dbname=' + self.database,
             '--start',
             '-f-'
-        ], {env: self.env, detached: false});
+        ];
+
+        if (self.decodingPlugin === 'wal2json') {
+            const wal2jsonOptions = {
+                'include-xids': 1,
+                'include-timestamp': 1,
+                'include-types': 1,
+                'include-typmod': 1,
+                'include-lsn': 1,
+                'write-in-chunks': 1,
+                'format-version': 2
+            };
+
+            commandArguments = commandArguments.concat(Object.keys(wal2jsonOptions).map(k => `-o${k}=${wal2jsonOptions[k]}`))
+        }
+
+        self.spawn = pg_recvlogical = spawn(self.binPath + '/pg_recvlogical', commandArguments, {env: self.env, detached: false});
 
         process.on('exit', function () {
             // If the worker crashes, kill pg_recvlogical to avoid missing output
@@ -608,16 +630,10 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
 
         // TODO: Why is data being output on STDERR instead of STDOUT?
 
-        /*
         pg_recvlogical.stderr.on('data', function (data) {
-            data.split('\n').forEach(function (line) {
-                var event = self.stdErrorToEvent(line);
-
-                if (event) {
-                    self.emit(event.type, event.message);
-                }
-            });
-        });*/
+            console.error(data);
+            console.log(data);
+        });
 
         pg_recvlogical.stdout
             .pipe(ldj.parse())
