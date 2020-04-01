@@ -16,7 +16,8 @@ addons:
     - postgresql-9.6
     - postgresql-server-dev-9.6
     - postgresql-contrib-9.6
-    - python-setuptools
+    - postgresql-9.6-wal2json
+    - pgxnclient
 
   services:
     - postgresql
@@ -39,10 +40,15 @@ install:
   - sudo curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
   - sudo ln -s ~/.cargo/bin/cargo /usr/local/bin/cargo
   - sudo ln -s ~/.cargo/bin/rustc /usr/local/bin/rustc
-  - sudo easy_install pgxnclient
   - sudo bash -c "pgxn install jsoncdc"
 
 before_script:
+  - source /etc/lsb-release
+  - echo "deb http://apt.postgresql.org/pub/repos/apt/ $DISTRIB_CODENAME-pgdg main" > pgdg.list
+  - sudo mv pgdg.list /etc/apt/sources.list.d/
+  - wget --quiet -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo apt-key add -
+  - sudo apt-get update
+  - sudo apt-get install -y postgresql-9.6-wal2json pgxnclient
   - sudo bash -c "cat test/config/bin-log.cnf >> /etc/mysql/conf.d/bin-log.cnf"
   - sudo bash -c "cat test/config/pg_hba.conf > /etc/postgresql/$PGVERSION/main/pg_hba.conf"
   - sudo bash -c "cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf"

@@ -17,6 +17,7 @@ describe('PostgreSQL', function () {
             'onTransaction',
             'onBeginTransaction',
             'onCommitTransaction',
+            'onTruncate',
 
             'onEventsWrapper',
             'onEventWrapper',
@@ -27,6 +28,7 @@ describe('PostgreSQL', function () {
             'onTransactionWrapper',
             'onBeginTransactionWrapper',
             'onCommitTransactionWrapper',
+            'onTruncateWrapper',
 
             'emitEvents',
             'emitDelete',
@@ -35,7 +37,8 @@ describe('PostgreSQL', function () {
             'emitError',
             'emitSchema',
             'emitBeginTransaction',
-            'emitCommitTransaction'
+            'emitCommitTransaction',
+            'emitTruncate'
         ],
         postgresql,
         client;
@@ -108,7 +111,7 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.onTransactionWrapper, eventsWrapper);
             assert.equal(postgresql.onBeginTransactionWrapper, eventsWrapper);
             assert.equal(postgresql.onCommitTransactionWrapper, eventsWrapper);
-
+            assert.equal(postgresql.onTruncateWrapper, eventsWrapper);
         });
 
         it('with meta properties that will only cascade valid values', function () {
@@ -121,6 +124,7 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.onTransactionWrapper, false);
             assert.equal(postgresql.onBeginTransactionWrapper, false);
             assert.equal(postgresql.onCommitTransactionWrapper, false);
+            assert.equal(postgresql.onTruncateWrapper, false);
         });
 
         it('with meta properties that will not overwrite custom values with meta values', function () {
@@ -143,6 +147,7 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.onTransactionWrapper, emptyFunc);
             assert.equal(postgresql.onBeginTransactionWrapper, emptyFunc);
             assert.equal(postgresql.onCommitTransactionWrapper, emptyFunc);
+            assert.equal(postgresql.onTruncateWrapper, emptyFunc);
         });
 
         it('with all publicly documented properties accessible', function () {
@@ -154,6 +159,7 @@ describe('PostgreSQL', function () {
                 'onTransaction',
                 'onBeginTransaction',
                 'onCommitTransaction',
+                'onTruncate',
 
                 'onEventsWrapper',
                 'onEventWrapper',
@@ -164,6 +170,7 @@ describe('PostgreSQL', function () {
                 'onTransactionWrapper',
                 'onBeginTransactionWrapper',
                 'onCommitTransactionWrapper',
+                'onTruncateWrapper',
 
                 'emitEvents',
                 'emitDelete',
@@ -171,7 +178,8 @@ describe('PostgreSQL', function () {
                 'emitUpdate',
                 'emitTransaction',
                 'emitBeginTransaction',
-                'emitCommitTransaction'
+                'emitCommitTransaction',
+                'emitTruncate'
             ];
 
             expectedProperties.forEach(function (prop) {
@@ -188,6 +196,7 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.emitTransaction, true);
             assert.equal(postgresql.emitBeginTransaction, true);
             assert.equal(postgresql.emitCommitTransaction, true);
+            assert.equal(postgresql.emitTruncate, true);
 
             postgresql.emitEvents = false;
             assert.equal(postgresql.emitEvent, false);
@@ -198,6 +207,7 @@ describe('PostgreSQL', function () {
             assert.equal(postgresql.emitTransaction, false);
             assert.equal(postgresql.emitBeginTransaction, false);
             assert.equal(postgresql.emitCommitTransaction, false);
+            assert.equal(postgresql.emitTruncate, false);
         });
 
         it('allows all public properties to be nulled', function() {
@@ -427,6 +437,51 @@ describe('PostgreSQL', function () {
                 assert.equal(idEvents[0].type, 'insert');
                 assert.equal(idEvents[1].type, 'update');
                 assert.equal(idEvents[2].type, 'delete');
+                postgresql.onTransaction = null;
+                done();
+            };
+        });
+    });
+
+    describe('to stream truncate events', function() {
+        beforeEach(function(done) {
+            var sql = `TRUNCATE test_table;`;
+
+            client.query(sql, function (err, result) {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('emits an "event" event', function(done) {
+            function handler(evt) {
+                assert.equal(evt.type, 'truncate');
+                // TODO: add more assertions
+            }
+
+            postgresql.once('event', handler);
+        });
+
+        it('executes an onEvent handler', function(done) {
+            postgresql.onEvent = function (evt) {
+                assert.equal(evt.type, 'truncate');
+                postgresql.onEvent = null;
+                done();
+            };
+        });
+
+        it('emits a "truncate" event', function(done) {
+            function handler(evt) {
+                assert.equal(evt.type, 'truncate');
+                done();
+            }
+
+            postgresql.once('truncate', handler);
+        });
+
+        it('executes an onTruncate handler', function(done) {
+            postgresql.onTruncate = function (evt) {
+                assert.equal(evt.type, 'truncate');
                 postgresql.onTransaction = null;
                 done();
             };

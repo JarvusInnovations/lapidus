@@ -42,7 +42,7 @@ function PostgresLogicalReceiver(options) {
             env: {},
             populateEnv: true,
             timeout: 10000,
-            decodingPlugin: 'jsoncdc',
+            decodingPlugin: 'wal2json',
             slot: null,
             debug: false,
             linePrefix: null,
@@ -79,7 +79,6 @@ function PostgresLogicalReceiver(options) {
         });
     }
 
-    // In V8 it's 8.7x slower to lookup an undefined property than to read a boolean value, so we'll explicitly set values.
     Object.defineProperty(this, "_emitEvents", {
         enumerable: false,
         writable: true
@@ -87,23 +86,25 @@ function PostgresLogicalReceiver(options) {
 
     this._emitEvents = (typeof options.emitEvents === 'boolean') ? options.emitEvents : true;
 
-    this.emitInsert            = (typeof options.emitInsert            === 'boolean')  ? options.emitInsert            : this._emitEvents;
-    this.emitUpdate            = (typeof options.emitUpdate            === 'boolean')  ? options.emitUpdate            : this._emitEvents;
-    this.emitDelete            = (typeof options.emitDelete            === 'boolean')  ? options.emitDelete            : this._emitEvents;
-    this.emitSchema            = (typeof options.emitSchema            === 'boolean')  ? options.emitSchema            : this._emitEvents;
-    this.emitTransaction       = (typeof options.emitTransaction       === 'boolean')  ? options.emitTransaction       : this._emitEvents;
-    this.emitBeginTransaction  = (typeof options.emitBeginTransaction  === 'boolean')  ? options.emitBeginTransaction  : this._emitEvents;
-    this.emitCommitTransaction = (typeof options.emitCommitTransaction === 'boolean')  ? options.emitCommitTransaction : this._emitEvents;
-    this.emitEvent             = (typeof options.emitEvent             === 'boolean')  ? options.emitEvent             : this._emitEvents;
+    this.emitInsert = (typeof options.emitInsert === 'boolean') ? options.emitInsert : this._emitEvents;
+    this.emitUpdate = (typeof options.emitUpdate === 'boolean') ? options.emitUpdate : this._emitEvents;
+    this.emitDelete = (typeof options.emitDelete === 'boolean') ? options.emitDelete : this._emitEvents;
+    this.emitSchema = (typeof options.emitSchema === 'boolean') ? options.emitSchema : this._emitEvents;
+    this.emitTruncate = (typeof options.emitTruncate === 'boolean') ? options.emitTruncate : this._emitEvents;
+    this.emitTransaction = (typeof options.emitTransaction === 'boolean') ? options.emitTransaction : this._emitEvents;
+    this.emitBeginTransaction = (typeof options.emitBeginTransaction === 'boolean') ? options.emitBeginTransaction : this._emitEvents;
+    this.emitCommitTransaction = (typeof options.emitCommitTransaction === 'boolean') ? options.emitCommitTransaction : this._emitEvents;
+    this.emitEvent = (typeof options.emitEvent === 'boolean') ? options.emitEvent : this._emitEvents;
 
-    this.onInsert            = (typeof options.onInsert            === 'function') ? options.onInsert            : false;
-    this.onUpdate            = (typeof options.onUpdate            === 'function') ? options.onUpdate            : false;
-    this.onDelete            = (typeof options.onDelete            === 'function') ? options.onDelete            : false;
-    this.onSchema            = (typeof options.onSchema            === 'function') ? options.onSchema            : false;
-    this.onTransaction       = (typeof options.onTransaction       === 'function') ? options.onTransaction       : false;
-    this.onBeginTransaction  = (typeof options.onBeginTransaction  === 'function') ? options.onBeginTransaction  : false;
+    this.onInsert = (typeof options.onInsert === 'function') ? options.onInsert : false;
+    this.onUpdate = (typeof options.onUpdate === 'function') ? options.onUpdate : false;
+    this.onDelete = (typeof options.onDelete === 'function') ? options.onDelete : false;
+    this.onSchema = (typeof options.onSchema === 'function') ? options.onSchema : false;
+    this.onTransaction = (typeof options.onTransaction === 'function') ? options.onTransaction : false;
+    this.onTruncate = (typeof options.onTruncate === 'function') ? options.onTruncate : false;
+    this.onBeginTransaction = (typeof options.onBeginTransaction === 'function') ? options.onBeginTransaction : false;
     this.onCommitTransaction = (typeof options.onCommitTransaction === 'function') ? options.onCommitTransaction : false;
-    this.onEvent             = (typeof options.onEvent             === 'function') ? options.onEvent             : false;
+    this.onEvent = (typeof options.onEvent === 'function') ? options.onEvent : false;
 
     Object.defineProperty(this, "_onEventsWrapper", {
         enumerable: false,
@@ -112,14 +113,15 @@ function PostgresLogicalReceiver(options) {
 
     this._onEventsWrapper = (typeof options.onEventsWrapper === 'function') ? options.onEventsWrapper : false;
 
-    this.onInsertWrapper            = (typeof options.onInsertWrapper            === 'function') ? options.onInsertWrapper            : this._onEventsWrapper;
-    this.onUpdateWrapper            = (typeof options.onUpdateWrapper            === 'function') ? options.onUpdateWrapper            : this._onEventsWrapper;
-    this.onDeleteWrapper            = (typeof options.onDeleteWrapper            === 'function') ? options.onDeleteWrapper            : this._onEventsWrapper;
-    this.onSchemaWrapper            = (typeof options.onSchemaWrapper            === 'function') ? options.onSchemaWrapper            : this._onEventsWrapper;
-    this.onTransactionWrapper       = (typeof options.onTransactionWrapper       === 'function') ? options.onTransactionWrapper       : this._onEventsWrapper;
-    this.onBeginTransactionWrapper  = (typeof options.onBeginTransactionWrapper  === 'function') ? options.onBeginTransactionWrapper  : this._onEventsWrapper;
+    this.onInsertWrapper = (typeof options.onInsertWrapper === 'function') ? options.onInsertWrapper : this._onEventsWrapper;
+    this.onUpdateWrapper = (typeof options.onUpdateWrapper === 'function') ? options.onUpdateWrapper : this._onEventsWrapper;
+    this.onDeleteWrapper = (typeof options.onDeleteWrapper === 'function') ? options.onDeleteWrapper : this._onEventsWrapper;
+    this.onSchemaWrapper = (typeof options.onSchemaWrapper === 'function') ? options.onSchemaWrapper : this._onEventsWrapper;
+    this.onTransactionWrapper = (typeof options.onTransactionWrapper === 'function') ? options.onTransactionWrapper : this._onEventsWrapper;
+    this.onBeginTransactionWrapper = (typeof options.onBeginTransactionWrapper === 'function') ? options.onBeginTransactionWrapper : this._onEventsWrapper;
     this.onCommitTransactionWrapper = (typeof options.onCommitTransactionWrapper === 'function') ? options.onCommitTransactionWrapper : this._onEventsWrapper;
-    this.onEventWrapper             = (typeof options.onEventWrapper             === 'function') ? options.onEventWrapper             : this._onEventsWrapper;
+    this.onEventWrapper = (typeof options.onEventWrapper === 'function') ? options.onEventWrapper : this._onEventsWrapper;
+    this.onTruncateWrapper = (typeof options.onTruncateWrapper === 'function') ? options.onTruncateWrapper : this._onEventsWrapper;
 
     this.excludeTables = options.excludeTables || null;
 
@@ -133,15 +135,15 @@ Object.defineProperty(PostgresLogicalReceiver.prototype, 'onEventsWrapper', {
     set: function (val) {
         val = (typeof val === 'function') ? val : false;
 
-        this.onInsertWrapper            = (this.onInsertWrapper            === this._onEventsWrapper) ? val : this.onInsertWrapper;
-        this.onDeleteWrapper            = (this.onDeleteWrapper            === this._onEventsWrapper) ? val : this.onDeleteWrapper;
-        this.onUpdateWrapper            = (this.onUpdateWrapper            === this._onEventsWrapper) ? val : this.onUpdateWrapper;
-        this.onSchemaWrapper            = (this.onSchemaWrapper            === this._onEventsWrapper) ? val : this.onSchemaWrapper;
-        this.onTransactionWrapper       = (this.onTransactionWrapper       === this._onEventsWrapper) ? val : this.onTransactionWrapper;
-        this.onBeginTransactionWrapper  = (this.onBeginTransactionWrapper  === this._onEventsWrapper) ? val : this.onBeginTransactionWrapper;
+        this.onInsertWrapper = (this.onInsertWrapper === this._onEventsWrapper) ? val : this.onInsertWrapper;
+        this.onDeleteWrapper = (this.onDeleteWrapper === this._onEventsWrapper) ? val : this.onDeleteWrapper;
+        this.onUpdateWrapper = (this.onUpdateWrapper === this._onEventsWrapper) ? val : this.onUpdateWrapper;
+        this.onSchemaWrapper = (this.onSchemaWrapper === this._onEventsWrapper) ? val : this.onSchemaWrapper;
+        this.onTransactionWrapper = (this.onTransactionWrapper === this._onEventsWrapper) ? val : this.onTransactionWrapper;
+        this.onBeginTransactionWrapper = (this.onBeginTransactionWrapper === this._onEventsWrapper) ? val : this.onBeginTransactionWrapper;
         this.onCommitTransactionWrapper = (this.onCommitTransactionWrapper === this._onEventsWrapper) ? val : this.onCommitTransactionWrapper;
-        this.onEventWrapper             = (this.onEventWrapper             === this._onEventsWrapper) ? val : this.onEventWrapper;
-
+        this.onEventWrapper = (this.onEventWrapper === this._onEventsWrapper) ? val : this.onEventWrapper;
+        this.onTruncateWrapper = (this.onTruncateWrapper === this._onEventsWrapper) ? val : this.onTruncateWrapper;
         this._onEventsWrapper = val;
     },
 
@@ -159,6 +161,7 @@ Object.defineProperty(PostgresLogicalReceiver.prototype, 'emitEvents', {
         this.emitTransaction = val;
         this.emitBeginTransaction = val;
         this.emitCommitTransaction = val;
+        this.emitTruncate = val;
         this.emitEvent = val;
 
         this._emitEvents = val;
@@ -177,10 +180,10 @@ function isExecutable(path, callback) {
             }
 
             let isExecutable = (file.mode & parseInt('0001', 8)) ||
-                               (file.mode & parseInt('0010', 8)) &&
-                               process.getgid && file.gid === process.getgid() ||
-                               (file.mode & parseInt('0100', 8)) &&
-                               process.getuid && file.uid === process.getuid();
+                (file.mode & parseInt('0010', 8)) &&
+                process.getgid && file.gid === process.getgid() ||
+                (file.mode & parseInt('0100', 8)) &&
+                process.getuid && file.uid === process.getuid();
 
             return callback(null, isExecutable);
         }
@@ -301,18 +304,36 @@ PostgresLogicalReceiver.prototype.createSlot = function createSlot(slot, callbac
         return callback(new Error(".createSlot() requires a slot in the configuration or function arguments"), null);
     }
 
-
-    execFile(this.binPath + '/pg_recvlogical', [
+    let commandArguments = [
         '--slot=' + slot,
         '--create-slot',
         '--plugin=' + this.decodingPlugin,
         '--dbname=' + this.database
-    ], {
+    ];
+
+    if (this.decodingPlugin === 'wal2json') {
+        const wal2jsonOptions = {
+            'include-xids': true,
+            'include-timestamp': true,
+            'include-column': true,
+            'include-types': true,
+            'include-typmod': true,
+            'include-lsn': true,
+            'write-in-chunks': true,
+            'format-version': 2
+        };
+
+        commandArguments = commandArguments.concat(Object.keys(wal2jsonOptions).map(k => `-o ${k}=${wal2jsonOptions[k]}`))
+    }
+
+    console.log(commandArguments);
+
+    execFile(this.binPath + '/pg_recvlogical', commandArguments, {
         env: this.env,
         timeout: this.timeout
     }, function (error, stdout, stderr) {
         if (error) {
-            let slotAlreadyExists = error.message.contains('already exists') === -1;
+            let slotAlreadyExists = error.message.includes('already exists') === -1;
 
             if (!slotAlreadyExists) {
                 return callback(new Error('Failed to create slot: ' + stderr), false);
@@ -370,112 +391,104 @@ PostgresLogicalReceiver.prototype.stop = function stop(callback) {
     }
 };
 
-PostgresLogicalReceiver.prototype.lineHandler = function lineHandler (line) {
-    var tableName,
-        action,
-        pk,
+PostgresLogicalReceiver.prototype.lineHandler = function lineHandler(line) {
+    let {action, schema, table, columns} = line;
+
+    var pk,
         msg,
         type,
         eventHandler,
         eventHandlerWrapper,
         emitEvent,
         transactionEvent,
-        tableName = line.table,
-        self = this;
+        self = this,
+        tableName = line.table;
 
-    // HACK: Filter out pg_temp tables (if you refresh a materialized view you'll get an INSERT
-    // for each row to a pg_temp_* table)
-    if (tableName) {
-        if (tableName.indexOf('pg_temp_') !== -1) {
-            return;
-        }
+    // Exit-early
+    if (table.startsWith('pg_temp_')) return;
+    if (self.excludeTables && self.excludeTables.includes(table)) return;
 
-        if (self.excludeTables) {
-            if (self.excludeTables.indexOf(tableName) !== -1) {
-                return;
+    switch (action) {
+        case 'I':
+            action = 'insert';
+            eventHandler = 'onInsert';
+            eventHandlerWrapper = 'onInsertWrapper';
+            emitEvent = 'emitInsert';
+            break;
+        case 'U':
+            action = 'update';
+            eventHandler = 'onInsert';
+            eventHandlerWrapper = 'onInsertWrapper';
+            emitEvent = 'emitInsert';
+            break;
+        case 'D':
+            action = 'delete';
+            eventHandler = 'onDelete';
+            eventHandlerWrapper = 'onDeleteWrapper';
+            emitEvent = 'emitDelete';
+            break;
+        case 'T':
+            action = 'truncate';
+            eventHandler = 'onTruncate';
+            eventHandlerWrapper = 'onTruncateWrapper';
+            emitEvent = 'emitTruncate';
+            break;
+        case 'M':
+            action = 'message';
+            eventHandler = 'onMessage';
+            eventHandlerWrapper = 'onMessageWrapper';
+            emitEvent = 'emitMessage';
+            break;
+        case 'B':
+            action = 'beginTransaction';
+            eventHandler = 'onBeginTransaction';
+            eventHandlerWrapper = 'onBeginTransactionWrapper';
+            emitEvent = 'emitBeginTransaction';
+
+            msg = {
+                'id': line.xid
+            };
+
+            if (self.emitTransaction) {
+                self.currentTxId = line.xid;
+                self.currentTx = new DatabaseTransaction(self.currentTxId);
             }
-        }
-    }
+        break;
+        case 'C':
+            action = 'commitTransaction';
+            eventHandler = 'onCommitTransaction';
+            eventHandlerWrapper = 'onCommitTransactionWrapper';
+            emitEvent = 'emitCommitTransaction';
 
-    if (line.insert) {
-        action = 'insert';
-        eventHandler = 'onInsert';
-        eventHandlerWrapper = 'onInsertWrapper';
-        emitEvent = 'emitInsert';
-    } else if (line.update) {
-        action = 'update';
-        eventHandler = 'onUpdate';
-        eventHandlerWrapper = 'onUpdateWrapper';
-        emitEvent = 'emitUpdate';
-    } else if (line.delete) {
-        action = 'delete';
-        eventHandler = 'onDelete';
-        eventHandlerWrapper = 'onDeleteWrapper';
-        emitEvent = 'emitDelete';
+            msg = {
+                'id': line.xid,
+                'timestamp': new Date(line.timestamp)
+            };
 
-        msg = {
-            table: tableName,
-            schema: self.schemaCache[tableName],
-            item: line['@'],
-            txId: self.currentTxId,
-        };
+            if (self.emitTransaction) {
+                assert.equal(self.currentTxId, line.xid, 'Mismatched currentTxId');
+                transactionEvent = self.currentTx.commit(msg.timestamp);
+            }
 
-        if (typeof line['@'] === 'object') {
-            msg.pk = line['@'][Object.keys(line['@']).filter(key => line['@'][key] !== null).shift()] || null;
-        }
-
-        if (self.emitTransaction) {
-            self.currentTx.push(msg);
-        }
-    } else if (line.schema) {
-        action = 'schema';
-        eventHandler = 'onSchema';
-        eventHandlerWrapper = 'onSchemaWrapper';
-        emitEvent = 'emitSchema';
-
-        self.schemaCache[tableName] = line.schema;
-    } else if (line.begin) {
-        action = 'beginTransaction';
-        eventHandler = 'onBeginTransaction';
-        eventHandlerWrapper = 'onBeginTransactionWrapper';
-        emitEvent = 'emitBeginTransaction';
-
-        msg = {
-            'id': line.begin
-        };
-
-        if (self.emitTransaction) {
-            self.currentTxId = line.begin;
-            self.currentTx = new DatabaseTransaction(self.currentTxId);
-        }
-    } else if (line.commit) {
-        action = 'commitTransaction';
-        eventHandler = 'onCommitTransaction';
-        eventHandlerWrapper = 'onCommitTransactionWrapper';
-        emitEvent = 'emitCommitTransaction';
-
-        msg = {
-            'id': line.commit,
-            'timestamp': new Date(line.t)
-        };
-
-        if (self.emitTransaction) {
-            assert.equal(self.currentTxId, line.commit, 'Mismatched currentTxId');
-            transactionEvent = self.currentTx.commit(msg.timestamp);
-        }
-    } else {
-        console.error(new Error('jsoncdc sent an unknown event type: ' + line));
-        return;
+            break;
+        default:
+            console.error(new Error(`wal2json sent an unknown action type: ${action}`));
+            return;
     }
 
     if (!msg) {
-        pk = line[action].id || line[action].ID;
+        pk = (line.identity || []).map(i => i.value).join('.');
+
+        let item = {};
+        line.columns.forEach(column => item[column.name] = column.value);
 
         msg = {
-            table: tableName,
+            table: table,
             pk: pk,
-            schema: self.schemaCache[tableName],
-            item: (line[action] || pk),
+            identity: line.identity,
+            schema: schema,
+            columns: line.columns,
+            item: item,
             txId: self.currentTxId
         };
 
@@ -486,16 +499,16 @@ PostgresLogicalReceiver.prototype.lineHandler = function lineHandler (line) {
 
     if (transactionEvent) {
         if (self.emitTransaction) {
-            self.emit('transaction', transactionEvent);    
+            self.emit('transaction', transactionEvent);
         }
 
         if (self.onTransaction) {
             if (self.onTransactionWrapper) {
                 self.onTransactionWrapper(function () {
                     self.onTransaction(transactionEvent, transactionEvent);
-                });            
+                });
             } else {
-                self.onTransaction(transactionEvent, transactionEvent);    
+                self.onTransaction(transactionEvent, transactionEvent);
             }
         }
     }
@@ -581,7 +594,7 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
             '-f-'
         ], {env: self.env, detached: false});
 
-        process.on('exit', function() {
+        process.on('exit', function () {
             // If the worker crashes, kill pg_recvlogical to avoid missing output
             if (self.spawn && typeof self.spawn.kill === 'function') {
                 self.spawn.kill();
@@ -605,10 +618,10 @@ PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
         });*/
 
         pg_recvlogical.stdout
-        .pipe(ldj.parse())
-        .on('data', function(line) {
-            self.lineHandler(line);
-        });
+            .pipe(ldj.parse())
+            .on('data', function (line) {
+                self.lineHandler(line);
+            });
 
         pg_recvlogical.on('close', function (code) {
             self.emit((code === 0) ? 'stop' : 'error', 'pg_recvlogical exited with code: ' + code);
