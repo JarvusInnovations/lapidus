@@ -43,15 +43,14 @@ before_script:
   - mkdir the_hatch
   - wget http://downloads.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1404-v3.6-latest.tgz -O /tmp/mongodb.tgz
   - tar -xvf /tmp/mongodb.tgz
-  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17/bin/mongod --port 27017 --dbpath the_hatch --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17-36-g346ddab/bin/mongod --port 27017 --dbpath the_hatch --replSet rs0 --oplogSize 20 --noprealloc --fork --smallfiles --logpath mongodb.log
   - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
-  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17/bin/mongo lapidus --eval 'printjson(rs.initiate());'
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17-36-g346ddab/bin/mongo lapidus --eval 'printjson(rs.initiate());'
   - sudo service mysql stop
   - sudo service postgresql stop 9.6
   - sleep 10
-  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17/bin/mongo lapidus --eval 'db.getMongo().setSlaveOk();'
-  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17/bin/mongo lapidus --eval 'db.createUser({user:"lapidus",pwd:"2PQM9aiKMJX5chv76gYdFJNi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
-  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17/bin/mongo lapidus --eval 'db.createUser({user:"walt",pwd:"EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17-36-g346ddab/bin/mongo lapidus --eval 'db.getMongo().setSlaveOk();'
+  - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17-36-g346ddab/bin/mongo lapidus --eval 'db.createUser({user:"walt",pwd:"EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
   - sudo service postgresql start 9.6
   - sudo service postgresql status
   - sudo service mysql start
