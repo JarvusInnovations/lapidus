@@ -36,7 +36,7 @@ notifications:
 before_script:
   - git clone https://github.com/eulerto/wal2json.git
   - USE_PGXS=1 make -C wal2json
-  - USE_PGXS=1 make -C waljson install
+  - USE_PGXS=1 make -C wal2json install
   - sudo bash -c "cat test/config/bin-log.cnf >> /etc/mysql/conf.d/bin-log.cnf"
   - sudo bash -c "cat test/config/pg_hba.conf > /etc/postgresql/$PGVERSION/main/pg_hba.conf"
   - sudo bash -c "cat test/config/postgresql.conf >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
