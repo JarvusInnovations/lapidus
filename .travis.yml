@@ -6,17 +6,17 @@ sudo: required
 
 env:
   global:
-  - PGVERSION=9.6
+  - PGVERSION=12
 
 addons:
-  postgresql: "9.6"
+  postgresql: "12"
   mariadb: "10.1"
   apt:
     packages:
-    - postgresql-9.6
-    - postgresql-server-dev-9.6
-    - postgresql-contrib-9.6
-    - postgresql-9.6-wal2json
+    - postgresql-12
+    - postgresql-server-dev-12
+    - postgresql-contrib-12
+    - postgresql-12-wal2json
   services:
     - postgresql
 
@@ -47,11 +47,11 @@ before_script:
   - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
   - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17-36-g346ddab/bin/mongo lapidus --eval 'printjson(rs.initiate());'
   - sudo service mysql stop
-  - sudo service postgresql stop 9.6
+  - sudo service postgresql stop 12
   - sleep 10
   - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17-36-g346ddab/bin/mongo lapidus --eval 'db.getMongo().setSlaveOk();'
   - ${PWD}/mongodb-linux-x86_64-ubuntu1404-3.6.17-36-g346ddab/bin/mongo lapidus --eval 'db.createUser({user:"walt",pwd:"EnlmLSvK6XeneMKZOhXGEnNtvUgHtuFV2ZZi",roles:[{role:"clusterAdmin",db:"admin"},{role:"readAnyDatabase",db:"admin"},"readWrite"]});'
-  - sudo service postgresql start 9.6
+  - sudo service postgresql start 12
   - sudo service postgresql status
   - sudo service mysql start
   - sudo service mysql status
