@@ -45,19 +45,19 @@ bootstrap_postgres:
   image: postgres:11
   script:
   - export PGPASSWORD=$POSTGRES_PASSWORD
-  - psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f ./test/bootstrap_postgresql.sql
+  - psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f ./test/sql/bootstrap_postgresql.sql
 
 bootstrap_mysql:
   stage: build
   image: mysql:latest
   script:
-  - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD < ./test/bootstrap_mysql.sql
+  - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD < ./test/sql/bootstrap_mysql.sql
 
 bootstrap_mariadb:
   stage: build
   image: mariadb:latest
   script:
-  - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD < ./test/bootstrap_mysql.sql
+  - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD < ./test/sql/bootstrap_mysql.sql
 
 bootstrap_mongodb:
   stage: build
