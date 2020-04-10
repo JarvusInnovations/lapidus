@@ -15,9 +15,9 @@
   ],
   "maintainers": [
     {
-      "name": "Jeffrey Mealo",
-      "email": "jeffreymealo@gmail.com",
-      "web": "http://jeffreymealo.com"
+      "name": "Jeff Mealo",
+      "email": "jmealo@protonmail.com",
+      "web": "https://jeffmealo.com"
     }
   ],
   "repository": {
@@ -30,17 +30,15 @@
     "test-travis": "istanbul cover _mocha -- -R spec ./test/*"
   },
   "devDependencies": {
-    "coveralls": "^2.11.4",
+    "coveralls": "^3.0.11",
     "istanbul": "^0.3.20",
-    "mocha": "^2.3.2",
+    "mocha": "^7.1.1",
     "pg": "^6.0.2"
   },
   "dependencies": {
-    "async": "^1.5.2",
-    "errno": "^0.1.4",
     "jsonlint": "^1.6.2",
-    "ldjson-stream": "^1.2.1",
-    "mongodb": "^2.1.18",
+    "mongodb": "^3.5.5",
+    "pgwire": "^0.5.1",
     "yargs": "^3.32.0"
   },
   "optionalDependencies": {

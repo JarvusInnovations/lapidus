@@ -3,13 +3,7 @@
 const util = require('util');
 const EventEmitter = require('events');
 const fs = require('fs');
-const pgConfig = require('pg-config');
-const exec = require('child_process').exec;
-const execFile = require('child_process').execFile;
-const spawn = require('child_process').spawn;
-const async = require('async');
 const assert = require('assert');
-const ldj = require('ldjson-stream');
 
 /* TODO: Deprecate DatabaseTransaction as it is naive and will not work well with large transactions. If we flushed
          to disk and used streams throughout we could support this but it'd be difficult to apply filters and work with
@@ -169,208 +163,20 @@ Object.defineProperty(PostgresLogicalReceiver.prototype, 'emitEvents', {
     }
 });
 
-function isExecutable(path, callback) {
-    fs.stat(path, function (err, file) {
-        if (!err && file && file.isFile()) {
-            if (process.platform === 'win32') {
-                return callback(null, true);
-            }
-
-            let isExecutable = (file.mode & parseInt('0001', 8)) ||
-                               (file.mode & parseInt('0010', 8)) &&
-                               process.getgid && file.gid === process.getgid() ||
-                               (file.mode & parseInt('0100', 8)) &&
-                               process.getuid && file.uid === process.getuid();
-
-            return callback(null, isExecutable);
-        }
-
-        return callback(new Error(path + ' is either missing or not executable'), false);
-    });
-}
-
-PostgresLogicalReceiver.prototype.stdErrorToEvent = function stdErrorToEvent(line) {
-    var linePrefix = this.linePrefix,
-        lineOffset = this.lineOffset,
-        str = line.substr(lineOffset).trim(),
-        firstThree = str.substr(0, 3),
-        eventType = 'error';
-
-    if (line === '') {
-        return;
-    }
-
-    /* Parse the human readable output of pg_recvlogical (https://doxygen.postgresql.org/pg__recvlogical_8c.html) */
-    if (firstThree === 'cou' || firstThree === 'unr' || firstThree === 'une' || firstThree === 'sel') {
-        eventType = 'error';
-    } else if (firstThree === 'con') {
-        eventType = 'status';
-    } else if (firstThree === 'sta') {
-        eventType = 'status';
-    } else if (firstThree === 'dis') {
-        eventType = 'disconnected';
-    } else if (str === 'streaming initiated') {
-        eventType = 'status';
-    } else if (str === 'streaming header too small') {
-        eventType = 'error';
-    } else {
-        if (line.indexOf(linePrefix) !== 0 && line !== '') {
-            this.debug && console.warn('Ignoring stderr (likely logging sent from server): ' + line);
-        } else {
-            this.debug && console.error('stderr with prefix fell through: ' + line);
-        }
-        return;
-    }
-
-    return {
-        type: eventType,
-        message: str.replace(linePrefix, '')
-    };
-};
-
-PostgresLogicalReceiver.prototype.getLinePrefix = function getLinePrefix(callback) {
-    var self = this;
-
-    if (!this.binPath) {
-        return callback(new Error('You must call .init() before calling .getLinePrefix'), null);
-    }
-
-    if (this.linePrefix) {
-        return callback(null, this.linePrefix);
-    }
-
-    execFile(this.binPath + '/pg_recvlogical', [], {timeout: this.timeout},
-        function (error, stdout, stderr) {
-
-            if (error && stderr.indexOf('no slot specified') === -1) {
-                return callback(new Error('Unexpected input from pg_recvlogical on stderr while parsing line prefix: ' + stderr), null);
-            }
-
-            stderr = stderr.split(':');
-
-            self.linePrefix = stderr[0] + ': ';
-            self.lineOffset = self.linePrefix.length;
-
-            callback(null, stderr[0]);
-        }
-    );
-};
-
-PostgresLogicalReceiver.prototype.pgIsReady = function pgIsReady(callback) {
-    if (!this.binPath) {
-        return callback(new Error('You must call .init() before calling .pgIsReady()'), null);
-    }
-
-    exec(this.binPath + '/pg_isready', {timeout: this.timeout}, function (error, stdout, stderr) {
-        if (error) {
-            return callback(new Error('pgIsReady Error: ' + stderr), false);
-        }
-
-        callback(null, stdout.indexOf('accepting connections') !== -1);
-    });
-};
-
-PostgresLogicalReceiver.prototype.canPsql = function canPsql(callback) {
-    if (!this.binPath) {
-        return callback(new Error('You must call .init() before calling .canPsql()'), null);
-    }
-
-    execFile(this.binPath + '/psql', ['-Atqwc', 'SELECT 1;'], {
-        env: this.env,
-        timeout: this.timeout
-    }, function (error, stdout, stderr) {
-        if (error) {
-            return callback(new Error('canPsql Error: ' + stderr || error), false);
-        }
-
-        callback(null, stdout.indexOf('1') !== 0);
-    });
-};
-
 PostgresLogicalReceiver.prototype.createSlot = function createSlot(slot, callback) {
-    if (!this.binPath) {
-        return callback(new Error('You must call .init() before calling .createSlot()'), null);
-    }
-
-    if (typeof slot === 'function') {
-        callback = slot;
-        slot = this.slot;
-    }
-
-    if (!slot) {
-        return callback(new Error(".createSlot() requires a slot in the configuration or function arguments"), null);
-    }
-
-
-    execFile(this.binPath + '/pg_recvlogical', [
-        '--slot=' + slot,
-        '--create-slot',
-        '--plugin=' + this.decodingPlugin,
-        '--dbname=' + this.database
-    ], {
-        env: this.env,
-        timeout: this.timeout
-    }, function (error, stdout, stderr) {
-        if (error) {
-            let slotAlreadyExists = error.message.contains('already exists') === -1;
-
-            if (!slotAlreadyExists) {
-                return callback(new Error('Failed to create slot: ' + stderr), false);
-            }
-        }
-
-        callback(null, stdout);
-    });
+    // TODO: Implement createSlot
 };
 
 PostgresLogicalReceiver.prototype.dropSlot = function dropSlot(slot, callback) {
-    if (!this.binPath) {
-        return callback(new Error('You must call .init() before calling .dropSlot()'), null);
-    }
-
-    if (typeof slot === 'function') {
-        callback = slot;
-        slot = this.slot;
-    }
-
-    if (!slot) {
-        return callback(new Error('.createSlot() requires a slot in the configuration or function arguments'), null);
-    }
-
-    execFile(this.binPath + '/pg_recvlogical', [
-        '--slot=' + slot,
-        '--drop-slot',
-        '--dbname=' + this.database
-    ], {
-        env: this.env,
-        timeout: this.timeout
-    }, function (error, stdout, stderr) {
-        if (error) {
-            return callback(new Error('Failed to drop slot: ' + stderr), false);
-        }
-
-        callback(null, stdout);
-    });
+    // TODO: Implement dropSlot (note, this is/was not used internally in 1.x)
 };
 
 PostgresLogicalReceiver.prototype.stop = function stop(callback) {
-    if (this instanceof PostgresLogicalReceiver) {
-        if (!this.binPath) {
-            return callback && callback(new Error('You must call .init() before calling .stop()'), null);
-        }
-
-        if (!this.spawn) {
-            return callback && callback(new Error('You must call .start() before calling .stop()'), null);
-        }
-
-        this.spawn.kill();
-        process.off('exit', stop);
-    } else if (callback && callback.message && callback.name) {
-        this.emit('error', callback);
-    }
+    // TODO: Implement stop
 };
 
 PostgresLogicalReceiver.prototype.lineHandler = function lineHandler (line) {
+    // TODO: Refactor to work with pgwire for 1.x branch
     var tableName,
         action,
         pk,
@@ -548,133 +354,11 @@ PostgresLogicalReceiver.prototype.lineHandler = function lineHandler (line) {
 };
 
 PostgresLogicalReceiver.prototype.start = function start(slot, callback) {
-    var pg_recvlogical,
-        self = this;
-
-    if (typeof slot === 'function') {
-        callback = slot;
-        slot = this.slot;
-    }
-
-    if (!slot) {
-        return callback(new Error('.start() requires a slot in the configuration or function arguments'), null);
-    }
-
-    if (!this.binPath) {
-        return callback && callback(new Error('You must call .init() before calling .start()'), null);
-    }
-
-    if (!this.spawn) {
-        // TODO: Log level warning that start() was called twice
-    }
-
-    this.createSlot(slot, function (err) {
-        if (err) {
-            return callback(err);
-        }
-
-        self.spawn = pg_recvlogical = spawn(self.binPath + '/pg_recvlogical', [
-            '--slot=' + slot,
-            '--plugin=' + self.decodingPlugin,
-            '--dbname=' + self.database,
-            '--start',
-            '-f-'
-        ], {env: self.env, detached: false});
-
-        process.on('exit', function() {
-            // If the worker crashes, kill pg_recvlogical to avoid missing output
-            if (self.spawn && typeof self.spawn.kill === 'function') {
-                self.spawn.kill();
-            }
-        });
-
-        pg_recvlogical.stdout.setEncoding('utf8');
-        pg_recvlogical.stderr.setEncoding('utf8');
-
-        // TODO: Why is data being output on STDERR instead of STDOUT?
-
-        /*
-        pg_recvlogical.stderr.on('data', function (data) {
-            data.split('\n').forEach(function (line) {
-                var event = self.stdErrorToEvent(line);
-
-                if (event) {
-                    self.emit(event.type, event.message);
-                }
-            });
-        });*/
-
-        pg_recvlogical.stdout
-        .pipe(ldj.parse())
-        .on('data', function(line) {
-            self.lineHandler(line);
-        });
-
-        pg_recvlogical.on('close', function (code) {
-            self.emit((code === 0) ? 'stop' : 'error', 'pg_recvlogical exited with code: ' + code);
-        });
-
-        callback(null, pg_recvlogical);
-    });
-};
+};    // TODO: Implement start
 
 PostgresLogicalReceiver.prototype.init = function init(callback) {
-    var self = this;
-
-    async.auto({
-        pg_config: function (cb) {
-            pgConfig.getConfig(function (err, config) {
-                if (err) {
-                    return cb(err, null);
-                }
-
-                self.binPath = config.paths.bin;
-
-                cb(null, config);
-            });
-        },
-
-        pg_isready: ['pg_config', function (cb) {
-            isExecutable(self.binPath + '/pg_isready', function (err, executable) {
-                if (err || !executable) {
-                    return cb(new Error(self.binPath + '/pg_isready is missing or not executable'), false);
-                }
-
-                cb(null, true);
-            });
-        }],
-
-        pg_recvlogical: ['pg_config', function (cb) {
-            isExecutable(self.binPath + '/pg_recvlogical', function (err, executable) {
-                if (err || !executable) {
-                    return cb(new Error(self.binPath + '/pg_recvlogical is missing or not executable'), false);
-                }
-
-                cb(null, true);
-            });
-        }],
-
-        psql: ['pg_config', function (cb) {
-            isExecutable(self.binPath + '/psql', function (err, executable) {
-                if (err || !executable) {
-                    return cb(new Error(self.binPath + '/psql is missing or not executable'), false);
-                }
-
-                cb(null, true);
-            });
-        }],
-
-        linePrefix: ['pg_recvlogical', function (cb) {
-            self.getLinePrefix(cb);
-        }],
-
-        canPsql: ['pg_config', function (cb) {
-            self.canPsql(cb);
-        }]
-
-    }, function (err, results) {
-        callback && callback(err, self);
-    });
+    // TODO: Implement init
+   callback();
 };
 
 PostgresLogicalReceiver.prototype.validateConfig = function validateConfig(config, globalConfig) {
