@@ -30,24 +30,25 @@
     "test-travis": "istanbul cover _mocha -- -R spec ./test/*"
   },
   "devDependencies": {
-    "coveralls": "^2.11.4",
+    "coveralls": "^3.1.1",
     "istanbul": "^0.3.20",
-    "mocha": "^2.3.2",
-    "pg": "^6.0.2"
+    "mocha": "^10.2.0",
+    "pg": "^8.11.3"
   },
   "dependencies": {
-    "async": "^1.5.2",
-    "errno": "^0.1.4",
-    "jsonlint": "^1.6.2",
+    "@vlasky/zongji": "^0.5.9",
+    "async": "^3.2.5",
+    "errno": "^1.0.0",
+    "jsonlint": "^1.6.3",
     "ldjson-stream": "^1.2.1",
-    "mongodb": "^3.6.1",
-    "yargs": "^3.32.0"
+    "mongodb": "^6.3.0",
+    "yargs": "^17.7.2"
   },
   "optionalDependencies": {
-    "mongo-oplog": "^1.0.1",
-    "nats": "^0.4.4",
+    "mongo-oplog": "^2.1.4",
+    "nats": "^2.18.0",
     "pg-config": "0.0.1",
-    "zongji": "jmealo/zongji#master"
+    "zongji": "@vlasky/zongji"
   },
   "preferGlobal": true,
   "bin": {
