@@ -1,12 +1,13 @@
 'use strict';
 
 const EventEmitter = require('events').EventEmitter;
-const ZongJi = require('zongji');
+const ZongJi = require('@vlasky/zongji');
 
 function MySql(cfg) {
     var self = this;
 
     this.zongji = new ZongJi({
+        port: cfg.port || 3306,
         host: cfg.hostname,
         user: cfg.username,
         password: cfg.password
